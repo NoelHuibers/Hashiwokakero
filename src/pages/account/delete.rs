@@ -56,7 +56,7 @@ pub(super) fn DeleteAccount(stats: RwSignal<Option<UserStats>>) -> impl IntoView
     };
 
     view! {
-        <Card class="gap-4 md:order-last md:col-span-2">
+        <Card class="gap-4">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, account.delete.title)} <span class="font-pixel text-sm text-destructive">"削除"</span>

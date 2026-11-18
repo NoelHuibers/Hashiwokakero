@@ -103,49 +103,12 @@ pub fn AccountPage() -> impl IntoView {
                 </h1>
             </div>
 
-            <div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <Card class="gap-4 self-start">
-                    <CardHeader>
-                        <CardTitle class="flex items-baseline gap-2 text-xl">
-                            {t!(i18n, account.record)} <span class="font-pixel text-sm text-primary">"記録"</span>
-                        </CardTitle>
-                        <CardDescription>
-                            {move || match auth.user.get() {
-                                Some(u) if u.guest => t_string!(i18n, account.guest_here, name = u.name),
-                                Some(u) => t_string!(
-                                    i18n,
-                                    account.member_since,
-                                    date = date_short(i18n.get_locale(), u.created_at.div_euclid(crate::model::MS_PER_DAY))
-                                )
-                                ,
-                                None => t_string!(i18n, account.no_record).to_string(),
-                            }}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent class="flex flex-col gap-4">
-                        {move || match stats.get() {
-                            Some(s) => view! { <Record stats=s /> }.into_any(),
-                            None => {
-                                view! {
-                                    <div class="seigaiha grid h-40 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground">
-                                        <p class="rounded-md bg-card px-3 py-1">{t!(i18n, account.no_dailies)} " 待っています"</p>
-                                    </div>
-                                }
-                                    .into_any()
-                            }
-                        }}
-                        {move || {
-                            stats.with(Option::is_some).then(|| auth.user.with(|u| u.as_ref().map(|u| u.id))).flatten().map(|id| {
-                                let href = move || format!("{}/player/{id}", prefix(i18n.get_locale()));
-                                view! {
-                                    <A href=href attr:class="w-fit text-sm text-primary underline-offset-4 hover:underline">
-                                        {t!(i18n, account.public_profile)} " →"
-                                    </A>
-                                }
-                            })
-                        }}
-                    </CardContent>
-                </Card>
+            // From md on, the record and the stamp book take the whole width and the account's
+            // cards two columns of their own below them: cards of different heights in a grid's
+            // rows left holes beside the shorter ones (e2e/tests/profile-layout.spec.ts)
+            <div class="flex flex-col gap-6">
+                // Signed out, the empty record goes beside the sign in form instead
+                {move || auth.user.with(Option::is_some).then(|| view! { <RecordCard stats /> })}
 
                 {move || {
                     stats
@@ -154,7 +117,7 @@ pub fn AccountPage() -> impl IntoView {
                         .map(|s| {
                             let shown = RwSignal::new(s.shown);
                             view! {
-                                <Card class="gap-4 md:order-last md:col-span-2">
+                                <Card class="gap-4">
                                     <CardHeader>
                                         <CardTitle class="flex items-baseline gap-2 text-xl">
                                             {t!(i18n, stamps.title)} <span class="font-pixel text-sm text-primary">"判子帳"</span>
@@ -170,93 +133,154 @@ pub fn AccountPage() -> impl IntoView {
                         })
                 }}
 
-                <Card class="gap-4 self-start">
-                    <Show
-                        when=registered
-                        fallback=move || {
-                            view! {
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    // The last card of each column grows to end where the other column ends
+                    <div class="flex flex-col gap-6 [&>:last-child]:flex-1">
+                        <Card class="gap-4">
+                            <Show
+                                when=registered
+                                fallback=move || {
+                                    view! {
+                                        <CardHeader>
+                                            <CardTitle class="flex items-baseline gap-2 text-xl">
+                                                {t!(i18n, common.sign_in)} <span class="font-pixel text-sm text-primary">"入口"</span>
+                                            </CardTitle>
+                                            <CardDescription>
+                                                {move || {
+                                                    if auth.user.with(|u| u.as_ref().is_some_and(|u| u.guest)) {
+                                                        t_string!(i18n, account.guest_cta)
+                                                    } else {
+                                                        t_string!(i18n, account.sign_in_cta)
+                                                    }
+                                                }}
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Tabs default_value="register" class="w-full">
+                                                <TabsList class="w-full group-data-[orientation=Horizontal]/tabs:h-10 md:group-data-[orientation=Horizontal]/tabs:h-8">
+                                                    <TabsTrigger value="register">{t!(i18n, account.create)}</TabsTrigger>
+                                                    <TabsTrigger value="signin">{t!(i18n, common.sign_in)}</TabsTrigger>
+                                                </TabsList>
+                                                <TabsContent value="register" class="pt-2">
+                                                    <AuthForm mode=Mode::Register stats=stats />
+                                                </TabsContent>
+                                                <TabsContent value="signin" class="pt-2">
+                                                    <AuthForm mode=Mode::SignIn stats=stats />
+                                                </TabsContent>
+                                            </Tabs>
+                                        </CardContent>
+                                    }
+                                }
+                            >
                                 <CardHeader>
-                                    <CardTitle class="flex items-baseline gap-2 text-xl">
-                                        {t!(i18n, common.sign_in)} <span class="font-pixel text-sm text-primary">"入口"</span>
-                                    </CardTitle>
-                                    <CardDescription>
-                                        {move || {
-                                            if auth.user.with(|u| u.as_ref().is_some_and(|u| u.guest)) {
-                                                t_string!(i18n, account.guest_cta)
-                                            } else {
-                                                t_string!(i18n, account.sign_in_cta)
-                                            }
-                                        }}
-                                    </CardDescription>
+                                    <div class="flex items-center gap-4">
+                                        <span class="hanko grid size-16 shrink-0 rotate-[-6deg] place-items-center rounded-lg font-pixel text-3xl">
+                                            {move || {
+                                                auth.user
+                                                    .with(|u| u.as_ref().and_then(|u| u.name.chars().next()))
+                                                    .unwrap_or('?')
+                                                    .to_uppercase()
+                                                    .to_string()
+                                            }}
+                                        </span>
+                                        <div>
+                                            <CardTitle class="text-xl">{move || auth.user.with(|u| u.as_ref().map(|u| u.name.clone()))}</CardTitle>
+                                            <CardDescription>{t!(i18n, account.name_hint)}</CardDescription>
+                                        </div>
+                                    </div>
                                 </CardHeader>
-                                <CardContent>
-                                    <Tabs default_value="register" class="w-full">
-                                        <TabsList class="w-full group-data-[orientation=Horizontal]/tabs:h-10 md:group-data-[orientation=Horizontal]/tabs:h-8">
-                                            <TabsTrigger value="register">{t!(i18n, account.create)}</TabsTrigger>
-                                            <TabsTrigger value="signin">{t!(i18n, common.sign_in)}</TabsTrigger>
-                                        </TabsList>
-                                        <TabsContent value="register" class="pt-2">
-                                            <AuthForm mode=Mode::Register stats=stats />
-                                        </TabsContent>
-                                        <TabsContent value="signin" class="pt-2">
-                                            <AuthForm mode=Mode::SignIn stats=stats />
-                                        </TabsContent>
-                                    </Tabs>
-                                </CardContent>
-                            }
-                        }
-                    >
-                        <CardHeader>
-                            <div class="flex items-center gap-4">
-                                <span class="hanko grid size-16 shrink-0 rotate-[-6deg] place-items-center rounded-lg font-pixel text-3xl">
+                                <CardContent class="flex flex-col gap-2">
+                                    // Some admins keep their name, see `auth::change_username`
+                                    {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.name_locked)).then(|| view! { <ChangeUsername /> })}
+                                    <ChangePasswordForm />
                                     {move || {
                                         auth.user
-                                            .with(|u| u.as_ref().and_then(|u| u.name.chars().next()))
-                                            .unwrap_or('?')
-                                            .to_uppercase()
-                                            .to_string()
+                                            .with(|u| u.as_ref().is_some_and(|u| u.admin))
+                                            .then(|| {
+                                                view! {
+                                                    <a
+                                                        href="/admin"
+                                                        class="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground"
+                                                    >
+                                                        "管理 · Admin dashboard"
+                                                    </a>
+                                                }
+                                            })
                                     }}
-                                </span>
-                                <div>
-                                    <CardTitle class="text-xl">{move || auth.user.with(|u| u.as_ref().map(|u| u.name.clone()))}</CardTitle>
-                                    <CardDescription>{t!(i18n, account.name_hint)}</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent class="flex flex-col gap-2">
-                            // Some admins keep their name, see `auth::change_username`
-                            {move || auth.user.with(|u| u.as_ref().is_some_and(|u| !u.name_locked)).then(|| view! { <ChangeUsername /> })}
-                            <ChangePasswordForm />
-                            {move || {
-                                auth.user
-                                    .with(|u| u.as_ref().is_some_and(|u| u.admin))
-                                    .then(|| {
-                                        view! {
-                                            <a
-                                                href="/admin"
-                                                class="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-medium text-primary-foreground"
-                                            >
-                                                "管理 · Admin dashboard"
-                                            </a>
-                                        }
-                                    })
-                            }}
-                            <Button variant=ButtonVariant::Outline class="w-full" on:click=sign_out>
-                                {t!(i18n, account.sign_out)}
-                            </Button>
-                        </CardContent>
-                    </Show>
-                </Card>
+                                    <Button variant=ButtonVariant::Outline class="w-full" on:click=sign_out>
+                                        {t!(i18n, account.sign_out)}
+                                    </Button>
+                                </CardContent>
+                            </Show>
+                        </Card>
 
-                {move || registered().then(|| view! { <RecoveryEmailCard /> })}
-                // Once per player: loading the same one again mustn't make the card anew in the
-                // middle of turning notifications on
-                {move || signed_in.get().map(|_| view! { <NotificationSettings /> })}
-                <FeedbackCard />
-                {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
+                        {move || registered().then(|| view! { <RecoveryEmailCard /> })}
+                        {move || auth.user.with(Option::is_some).then(|| view! { <FeedbackCard /> })}
+                    </div>
+                    <div class="flex flex-col gap-6 [&>:last-child]:flex-1">
+                        {move || auth.user.with(Option::is_none).then(|| view! { <RecordCard stats /> <FeedbackCard /> })}
+                        // Once per player: loading the same one again mustn't make the card anew
+                        // in the middle of turning notifications on
+                        {move || signed_in.get().map(|_| view! { <NotificationSettings /> })}
+                        {move || auth.user.with(Option::is_some).then(|| view! { <BlockedPlayers /> })}
+                    </div>
+                </div>
                 {move || auth.user.with(Option::is_some).then(|| view! { <DeleteAccount stats /> })}
             </div>
         </section>
+    }
+}
+
+/// The daily record: the stat tiles, with the calendar beside them where the card is wide enough,
+/// and the way to the public profile.
+#[component]
+fn RecordCard(stats: RwSignal<Option<UserStats>>) -> impl IntoView {
+    let i18n = use_i18n();
+    let auth = expect_context::<Auth>();
+    view! {
+        <Card class="gap-4">
+            <CardHeader>
+                <CardTitle class="flex items-baseline gap-2 text-xl">
+                    {t!(i18n, account.record)} <span class="font-pixel text-sm text-primary">"記録"</span>
+                </CardTitle>
+                <CardDescription>
+                    {move || match auth.user.get() {
+                        Some(u) if u.guest => t_string!(i18n, account.guest_here, name = u.name),
+                        Some(u) => t_string!(
+                            i18n,
+                            account.member_since,
+                            date = date_short(i18n.get_locale(), u.created_at.div_euclid(crate::model::MS_PER_DAY))
+                        )
+                        ,
+                        None => t_string!(i18n, account.no_record).to_string(),
+                    }}
+                </CardDescription>
+            </CardHeader>
+            // As on the profile (pages/player): the calendar beside the tiles from md on
+            <CardContent class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,18rem)] md:gap-x-6">
+                {move || match stats.get() {
+                    Some(s) => view! { <Record stats=s /> }.into_any(),
+                    None => {
+                        view! {
+                            <div class="seigaiha grid h-40 place-items-center rounded-lg border border-dashed text-sm text-muted-foreground md:col-span-2">
+                                <p class="rounded-md bg-card px-3 py-1">{t!(i18n, account.no_dailies)} " 待っています"</p>
+                            </div>
+                        }
+                            .into_any()
+                    }
+                }}
+                {move || {
+                    stats.with(Option::is_some).then(|| auth.user.with(|u| u.as_ref().map(|u| u.id))).flatten().map(|id| {
+                        let href = move || format!("{}/player/{id}", prefix(i18n.get_locale()));
+                        view! {
+                            <A href=href attr:class="w-fit text-sm text-primary underline-offset-4 hover:underline md:col-span-2">
+                                {t!(i18n, account.public_profile)} " →"
+                            </A>
+                        }
+                    })
+                }}
+            </CardContent>
+        </Card>
     }
 }
 
@@ -268,7 +292,7 @@ fn FeedbackCard() -> impl IntoView {
         move |kind: FeedbackKind| move || feedback_link(i18n.get_locale(), Some(kind), "/account");
     let button = "inline-flex h-10 flex-1 items-center justify-center rounded-md border bg-background px-3 text-sm font-medium shadow-xs hover:bg-accent";
     view! {
-        <Card class="gap-4 self-start">
+        <Card class="gap-4">
             <CardHeader>
                 <CardTitle class="flex items-baseline gap-2 text-xl">
                     {t!(i18n, account.feedback.title)} <span class="font-pixel text-sm text-primary">"意見"</span>
