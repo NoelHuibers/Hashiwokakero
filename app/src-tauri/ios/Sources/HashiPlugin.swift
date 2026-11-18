@@ -61,7 +61,7 @@ struct PushToken: Encodable {
 }
 
 // The app's own plugin ("hashi" in src/lib.rs) on iOS, HashiPlugin.kt's counterpart: what the
-// page asks of iOS itself. Its commands are allowed in capabilities/default.json, called through
+// page asks of iOS itself (sharing, the status bar, Game Center, notifications). Its commands are allowed in capabilities/default.json, called through
 // `api::native` of the page (src/api/native.rs in the repository root). Tauri calls them on a
 // queue of its own, UIKit wants the main thread.
 class HashiPlugin: Plugin {
@@ -82,6 +82,7 @@ class HashiPlugin: Plugin {
   /// belong to (a late timeout doesn't answer the next round's).
   private var tokenWaiting: [Invoke] = []
   private var tokenRound = 0
+  private var tokenObservers: [NSObjectProtocol] = []
   /// How long iOS gets for a device token.
   private static let tokenTimeout: TimeInterval = 30
 
@@ -92,15 +93,17 @@ class HashiPlugin: Plugin {
     webview.allowsBackForwardNavigationGestures = true
     // iOS hands the device token to the app's delegate, which main.mm passes on as these
     let center = NotificationCenter.default
-    center.addObserver(forName: Notification.Name("HashiDeviceToken"), object: nil, queue: .main) {
-      [weak self] note in
-      self?.answerToken(note.object as? Data, error: nil)
-    }
-    center.addObserver(forName: Notification.Name("HashiDeviceTokenFailed"), object: nil, queue: .main) {
-      [weak self] note in
-      let error = (note.object as? NSError)?.localizedDescription ?? "unknown error"
-      self?.answerToken(nil, error: "iOS gave no device token: \(error)")
-    }
+    tokenObservers = [
+      center.addObserver(forName: Notification.Name("HashiDeviceToken"), object: nil, queue: .main) {
+        [weak self] note in
+        self?.answerToken(note.object as? Data, error: nil)
+      },
+      center.addObserver(forName: Notification.Name("HashiDeviceTokenFailed"), object: nil, queue: .main) {
+        [weak self] note in
+        let error = (note.object as? NSError)?.localizedDescription ?? "unknown error"
+        self?.answerToken(nil, error: "iOS gave no device token: \(error)")
+      },
+    ]
   }
 
   /**

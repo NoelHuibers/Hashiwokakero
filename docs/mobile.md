@@ -276,3 +276,22 @@ replaced through Play's support). Left, in this order (details in
     alarm and no foreground service. App Store Connect's privacy labels change with the iOS
     notifications, not here. F-Droid: no change (WorkManager is AndroidX, Apache 2.0, and the
     server is ours: `TetheredNet` covers the poll too).
+12. **Notifications on iOS** ([docs/notifications.md](notifications.md#the-ios-app-apns)). Done
+    (2026-11-18): the Push Notifications capability on the App ID `rs.hashi` (automatic signing
+    makes the profiles with it; the release checks `aps-environment` in the IPA and its profile)
+    and the APNs auth key "Hashi APNs" (key id `BRP878K87C`, team scoped, Sandbox & Production;
+    no certificates, the key doesn't expire). Left:
+    1. **The Fly secrets**, after the merge: `APNS_KEY_P8` (the `.p8` file's text),
+       `APNS_KEY_ID=BRP878K87C`, `APNS_TEAM_ID=Q35TCGM5PW` ([deployment.md](deployment.md)).
+       Then delete the `.p8` from the disk once it is kept safe elsewhere: Apple lets it be
+       downloaded once.
+    2. **App Privacy** in App Store Connect, before the first version with notifications goes to
+       review: Data types, **Identifiers, Device ID** (the APNs device token and the random
+       device id our server gives the app): collected, used for App Functionality, linked to the
+       user (stored with the account), not used for tracking. Nothing else changes: the
+       notification settings and the time zone go with the account's data (a time zone is not
+       Coarse Location in Apple's sense), Apple's push service is part of iOS, not a third party
+       of ours, and nothing is used for tracking or ads.
+    3. Nothing else in the portals: no push certificate, no extension, no App Review notes beyond
+       "notifications are off until the player turns them on (account page or the offer after a
+       finished daily)".

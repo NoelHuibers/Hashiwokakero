@@ -160,6 +160,13 @@ Where it differs:
   (`allowsBackForwardNavigationGestures`, which wry sets on macOS only). The pages are one
   document, so it never leaves the app; at the first page it does nothing.
 - **App Links** are Universal Links on iOS, see [App Links](#app-links).
+- **Notifications** come through Apple's push service (APNs), straight from our server: the
+  plugin asks iOS for the permission and the device token (`notify_permission`, `notify_state`,
+  `notify_token`), the page registers the token with the server and keeps the device's id and
+  secret (`state::apns`). `main.mm` passes the token from the app's delegate to the plugin, shows
+  a notification that comes while the app is in front as a banner, and opens a tapped one's page
+  as a Universal Link would. The entitlement `aps-environment` is `development` in debug builds,
+  `production` in release. See [docs/notifications.md](../docs/notifications.md#the-ios-app-apns).
 
 The smoke test checks the session (a guest made in the app, no cookie, the same guest after a
 reload), the headers, one update toast however many calls the server refuses, and the links.
@@ -1394,6 +1401,11 @@ This repository's project was generated in CI and committed like `gen/android`, 
   the launch's links on to `scene:continueUserActivity:` and `scene:openURLContexts:`, where tao
   hands the links of a running app to the deep-link plugin. Checked in the simulator with a test
   scheme: the link that starts the app reaches the page's `get_current`.
+- Notifications, also in `main.mm`: the device token's callbacks of the application's delegate
+  (added to tao's class before UIKit takes it), the notification centre's delegate (set before
+  the app finishes launching) and the tapped notification's link, which goes the Universal Links'
+  way. The entitlement `aps-environment` is `$(APS_ENVIRONMENT)`, a build setting of the target
+  in `project.yml` and `project.pbxproj`: `development` for debug, `production` for release.
 
 The iOS side of the app's own plugin `hashi` is outside `gen/apple`, in `src-tauri/ios/`: a Swift
 package (`HashiPlugin.swift`, the counterpart of `HashiPlugin.kt`) that `build.rs` builds with
@@ -1458,7 +1470,7 @@ outer display the page stops 84 pt before the right edge, where the sensor bar p
 
 ## Simulator test
 
-`e2e/ios/smoke.spec.ts`, with its own Playwright config (`e2e/ios.config.ts`), the counterpart of
+`e2e/ios/smoke.spec.ts` and `e2e/ios/notifications.spec.ts`, with their own Playwright config (`e2e/ios.config.ts`), the counterpart of
 the [emulator test](#emulator-test): the debug app on an iOS simulator, its page driven through
 [Appium](https://appium.io)'s XCUITest driver. Playwright can't attach to a `WKWebView`; Appium
 reaches it through the simulator's WebKit inspector (Safari's Web Inspector), which debug builds
@@ -1492,15 +1504,24 @@ inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the 
 gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
 side Tauri refuses them); Game Center's sign-in answers (available, nobody signed in) with nothing
 of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
-GameKit kept, or is refused without one. The screenshots `start.png`, `play.png`,
+GameKit kept, or is refused without one. Notifications (`notifications.spec.ts`, first: iOS asks
+once per simulator): iOS's alert, allowed through SpringBoard (Appium's `defaultActiveApplication`),
+answers `notify_permission` and `notify_state`; `notify_token` answers a token of the sandbox or
+says why there is none (noted in the report: an unsigned build has no `aps-environment`, a
+runner's simulator may not reach Apple); a notification of `xcrun simctl push` with our payload
+shows as a banner over the app in front, and a tap on it opens its `url`'s page (`/groups`) in the
+app, also when the tap starts the closed app. The screenshots `start.png`, `play.png`,
 `play-light.png`, `play-dark.png` (the page dark on a light phone: the status bar's icons
-light), `landscape.png`, `share.png` (the share sheet with the file) and `game-center.png` are the
+light), `landscape.png`, `share.png` (the share sheet with the file), `game-center.png` and
+`notification-tapped.png` are the
 artifact `ios-simulator-screenshot`. They come from `simctl io screenshot`, or from WebDriverAgent
 where simctl fails (it did once with the simulator turned sideways, on Xcode 27.1).
 
 Not checked, unlike on Android: `navigator.onLine` (the simulator has the Mac's network, only
 hashi.rs is blocked), the back button (iOS has none; the swipe from the edge isn't a WebDriver
-gesture), App Links (Universal Links need a signed build), the copy button (a click on it froze the
+gesture), App Links (Universal Links need a signed build), a real notification from APNs (that
+needs a signed build and Apple: by hand with TestFlight, and the server's test against the sandbox,
+see [docs/notifications.md](../docs/notifications.md#the-ios-app-apns)), the copy button (a click on it froze the
 simulator's page for 25 s, the clipboard's sync with the Mac), the status bar's style (the
 screenshots show it) and the soft keyboard (the simulator may have the Mac's keyboard connected).
 
