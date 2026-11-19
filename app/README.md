@@ -1487,7 +1487,10 @@ the driver's `mobile:` commands (clear, launch and activate an app, the app in f
 console from the inspector.
 
 Each test clears the app's data and launches it (`mobile: clearApp`, `mobile: launchApp`), selects
-its page once the inspector lists it and waits for it to hydrate. Another page of the app is opened
+its page once the inspector lists it and waits for it to hydrate. A start whose page isn't there
+within 50 s is started once more and the report says so (`relaunch`): on a busy runner's simulator
+a start's WKWebView stayed at about:blank, or its page didn't hydrate, for over a minute, while the
+next start went as usual. Another page of the app is opened
 with WebDriver's navigation, which waits for the load event: a script sent while the document
 changes waits for the next one. WebDriver can't run a script before the page's own like Playwright's
 `addInitScript`: after every page load the test adds listeners for errors and
