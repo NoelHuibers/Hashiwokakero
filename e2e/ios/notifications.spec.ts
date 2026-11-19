@@ -4,7 +4,7 @@
 // in front and from a closed app (main.mm). The notifications come from `xcrun simctl push`, as
 // APNs would hand them to the phone; the server's side (registering, sending) needs hashi.rs and
 // Apple, it has its own tests (server/notify/apns). Nothing here reaches hashi.rs. In the order of
-// the file: the first test installs the app anew so iOS asks, the taps need the permission.
+// the file: iOS asks once, the taps need the permission.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -12,7 +12,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { TauriWindow } from '../tauri.ts';
 import { type App, expect, inFront, test } from './app.ts';
-import { APP, BUNDLE, ORIGIN, simctl } from './device.ts';
+import { BUNDLE, ORIGIN, simctl } from './device.ts';
 import { NATIVE, type Session, WebDriverError } from './webdriver.ts';
 
 /** SpringBoard: the home screen, the banners and iOS's alerts. */
@@ -148,30 +148,33 @@ async function pageAgain(app: App) {
   await app.hydrated();
 }
 
-/**
- * The app installed anew and started: iOS forgets an app's notification permission when it is
- * deleted, so it asks again. Every try of the permission test starts from there, also the retry
- * of one that ended with iOS's alert still open (iOS stores the app's end as a no).
- */
-async function reinstall(app: App, udid: string) {
-  await app.session.setContext(NATIVE);
-  await app.session.mobile('terminateApp', { bundleId: BUNDLE });
-  await simctl('uninstall', udid, BUNDLE);
-  await simctl('install', udid, APP);
-  await app.session.mobile('launchApp', { bundleId: BUNDLE });
-  await pageAgain(app);
-}
+/** The Allow button of iOS's notification alert, if it shows. */
+const allowButton = (session: Session) =>
+  element(session, "type == 'XCUIElementTypeButton' AND label == 'Allow'");
 
-test("iOS asks once, and the plugin gives the push service's token", async ({ app, udid }) => {
-  await reinstall(app, udid);
-  // Not yet asked: not allowed
-  expect(await invoke(app, 'plugin:hashi|notify_state')).toEqual({ answer: { granted: false } });
+// A try that failed with iOS's alert still open: answered, so that the app's end doesn't answer it.
+// iOS takes an app that ends while it asks as a no, and its retry would find notifications refused.
+test.afterEach(async ({ app }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  await onSpringBoard(app.session, async () => {
+    const allow = await allowButton(app.session);
+    if (allow) await app.session.command('POST', `/element/${allow}/click`);
+  }).catch(() => {
+    // Nothing to answer, or the app is gone already
+  });
+});
+
+test("iOS asks once, and the plugin gives the push service's token", async ({ app }) => {
+  // Not yet asked: not allowed. iOS keeps the answer, not the app: a retry finds the first try's
+  // (see `afterEach`). The first question after the app's install can take a minute: iOS 27's
+  // simulator checks Apple Intelligence's availability first (73 s once), later ones answer at once.
+  const before = await invoke(app, 'plugin:hashi|notify_state');
+  if (test.info().retry === 0) expect(before).toEqual({ answer: { granted: false } });
   // The page's tap: iOS's alert, which waits for the player. The command only starts the request.
   // While a command in the page runs, Appium's XCUITest driver fails it as soon as an alert shows
-  // ("unexpected alert open"): a page busy for a moment (the first question to iOS's
-  // notification service after the simulator's boot took 73 s once) makes the command outlast
-  // the request, and the alert comes before its answer. That alert is the one asked for. From
-  // here on nothing runs in the page until it is answered.
+  // ("unexpected alert open"): a page busy for a moment (after the slow first question above)
+  // makes the command outlast the request, and the alert comes before its answer. That alert is
+  // the one asked for. From here on nothing runs in the page until it is answered.
   try {
     await app.evaluate(() => {
       Object.assign(window, {
@@ -190,10 +193,7 @@ test("iOS asks once, and the plugin gives the push service's token", async ({ ap
   }
   const allowed = await onSpringBoard(app.session, async () => {
     for (let i = 0; i < 40; i++) {
-      const allow = await element(
-        app.session,
-        "type == 'XCUIElementTypeButton' AND label == 'Allow'",
-      );
+      const allow = await allowButton(app.session);
       if (allow) {
         await app.session.command('POST', `/element/${allow}/click`);
         return true;
@@ -207,7 +207,7 @@ test("iOS asks once, and the plugin gives the push service's token", async ({ ap
       body: await springBoardSource(app.session),
       contentType: 'text/xml',
     });
-  expect(allowed, "iOS's alert with Allow").toBe(true);
+  expect(allowed || test.info().retry > 0, "iOS's alert with Allow").toBe(true);
   await expect
     .poll(() =>
       app.evaluate(() => (window as unknown as { e2ePermission?: unknown }).e2ePermission),
