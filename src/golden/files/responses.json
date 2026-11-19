@@ -227,18 +227,30 @@
       "solved": 42,
       "current_streak": 3,
       "best_streak": 12,
+      "saves": 1,
+      "missed": [
+        20383
+      ],
       "best_time_ms": 61000,
       "average_time_ms": 180500,
       "recent": [
         {
           "day": 20380,
           "time_ms": 61000,
-          "rank": 1
+          "rank": 1,
+          "caught_up": false
         },
         {
           "day": 20381,
+          "time_ms": 75000,
+          "rank": null,
+          "caught_up": true
+        },
+        {
+          "day": 20382,
           "time_ms": null,
-          "rank": null
+          "rank": null,
+          "caught_up": false
         }
       ],
       "gold": 2,

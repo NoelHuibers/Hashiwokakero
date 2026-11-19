@@ -246,8 +246,8 @@ impl PlayIds {
 
 /// The report of the server's statistics of the player (`my_stats`) for `platform`: every
 /// stamp of the book, earned or how far along (the steps toward `Stamp::steps`), and the
-/// leaderboards' scores, the dailies solved, the best streak, and the time of today's daily
-/// if the player solved it ranked (the last day of `recent` is the server's today). Without a
+/// leaderboards' scores, the dailies solved, the best streak (caught-up days included), and the
+/// time of today's daily if the player solved it ranked (the last day of `recent` is the server's today). Without a
 /// score of 0: nobody goes on a leaderboard for nothing. `None` when nothing is left to send.
 pub(crate) fn report(platform: Platform, play: &PlayIds, stats: &UserStats) -> Option<Report> {
     let achievements = stats.stamps.iter().filter_map(|p| {
@@ -257,6 +257,7 @@ pub(crate) fn report(platform: Platform, play: &PlayIds, stats: &UserStats) -> O
     let today = stats
         .recent
         .last()
+        .filter(|day| !day.caught_up)
         .and_then(|day| day.time_ms)
         .unwrap_or_default();
     let scores = [
@@ -519,6 +520,7 @@ mod tests {
             day,
             time_ms,
             rank: time_ms.map(|_| 4),
+            caught_up: false,
         }
     }
 

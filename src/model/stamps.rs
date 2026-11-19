@@ -446,6 +446,11 @@ pub struct Solve {
 pub struct Record {
     /// Sorted by day.
     pub solves: Vec<Solve>,
+    /// Days of finished catch-ups. They only count for the Streak stamps, and only from
+    /// `saves_from` on (see [`super::streak_state`]).
+    pub caught_up: Vec<i64>,
+    /// [`super::SAVES_FROM`] (`None`: caught-up days don't count).
+    pub saves_from: Option<i64>,
     /// Months the player finished first, see [`super::month_of`].
     pub champion_months: i64,
     /// Other players who solved a puzzle through one of the player's links
@@ -487,7 +492,7 @@ impl Record {
         let any = |f: &dyn Fn(&Solve) -> bool| i64::from(all.iter().any(f));
         let any_over = |f: &dyn Fn(&Solve) -> bool| i64::from(over().any(f));
         let solved = count(all.len());
-        let best_streak = best_streak(all);
+        let best_streak = best_streak(all, &self.caught_up, self.saves_from);
         let golds = count(over().filter(|s| s.place == 1).count());
         let podiums = count(over().filter(|s| s.place <= 3).count());
         let clean = count(all.iter().filter(|s| s.hints == 0 && s.checks == 0).count());
@@ -632,9 +637,10 @@ fn count(n: usize) -> i64 {
     i64::try_from(n).unwrap_or(i64::MAX)
 }
 
-fn best_streak(solves: &[Solve]) -> i64 {
+/// The longest run of days solved, caught-up days included.
+fn best_streak(solves: &[Solve], caught_up: &[i64], saves_from: Option<i64>) -> i64 {
     let days: Vec<i64> = solves.iter().map(|s| s.day).collect();
-    super::streaks(&days, 0).1
+    super::streak_state(&days, caught_up, &[], 0, saves_from).best
 }
 
 /// Most dailies solved in one Monday to Sunday week, 7 means every difficulty in a row.
@@ -675,7 +681,7 @@ fn golds_in_a_row(solves: &[Solve], today: i64) -> i64 {
         .filter(|s| s.day < today && s.place == 1)
         .map(|s| s.day)
         .collect();
-    super::streaks(&days, 0).1
+    super::streak_state(&days, &[], &[], 0, None).best
 }
 
 /// Three times of one difficulty within [`METRONOME_PERCENT`] of each other.
@@ -799,6 +805,36 @@ mod tests {
         let progress = record.progress(today);
         let streak30 = progress.iter().find(|p| p.0 == Stamp::Streak30).unwrap();
         assert_eq!((streak30.1, streak30.2), (7, 30));
+    }
+
+    /// Caught-up days count for the Streak stamps and nothing else, and only once saves started.
+    #[test]
+    fn caught_up_days_only_count_for_streaks() {
+        let from = LAUNCH_DAY + 10;
+        // Six days solved, the seventh caught up
+        let solves: Vec<Solve> = (from..from + 6).map(|d| solve(d, 5, 9)).collect();
+        let today = from + 30;
+        let with = |caught_up: Vec<i64>, saves_from| Record {
+            solves: solves.clone(),
+            caught_up,
+            saves_from,
+            ..Record::default()
+        };
+        let streak7 = |record: &Record| {
+            let progress = record.progress(today);
+            progress.iter().find(|p| p.0 == Stamp::Streak7).unwrap().1
+        };
+        let solved_count = |record: &Record| {
+            let progress = record.progress(today);
+            progress.iter().find(|p| p.0 == Stamp::Solved10).unwrap().1
+        };
+        let caught_up = with(vec![from + 6], Some(from));
+        assert_eq!(streak7(&caught_up), 7);
+        assert!(caught_up.earned(today).contains(&Stamp::Streak7));
+        assert_eq!(solved_count(&caught_up), 6);
+        // Without saves, or from before they started, it doesn't count
+        assert_eq!(streak7(&with(vec![from + 6], None)), 6);
+        assert_eq!(streak7(&with(vec![from - 1], Some(from))), 6);
     }
 
     #[test]
