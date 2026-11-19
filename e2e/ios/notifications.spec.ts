@@ -22,16 +22,60 @@ const LINK = 'https://hashi.rs/groups';
 
 test.describe.configure({ mode: 'serial' });
 
+/** A plugin command's answer, or its refusal. */
+type Outcome = { answer: unknown } | { refused: string };
+/** The outcomes of the commands `start` sent, in the page. */
+type Outcomes = { e2eOutcomes?: Record<number, Outcome>; e2eSent?: number };
+
+/**
+ * Sends a plugin command of the app in the page and returns at once, with the number to find its
+ * outcome by (`outcome`). The script doesn't wait for the command: while a script of the page runs
+ * for more than a second, Appium's XCUITest driver asks WebDriverAgent for an alert twice a second,
+ * and every ask reads the app's accessibility tree. On iOS 27's simulator that kept the app busy
+ * (Apple Intelligence's checks in the app) and the first `notify_state` took 73 s to over 120 s;
+ * an alert that shows meanwhile fails the script ("unexpected alert open").
+ */
+const start = (app: App, command: string) =>
+  app.evaluate((command) => {
+    const w = window as unknown as Outcomes;
+    w.e2eOutcomes ??= {};
+    w.e2eSent = (w.e2eSent ?? 0) + 1;
+    const outcomes = w.e2eOutcomes;
+    const id = w.e2eSent;
+    (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, {}).then(
+      (answer: unknown) => {
+        outcomes[id] = { answer: answer ?? null };
+      },
+      (e: unknown) => {
+        outcomes[id] = { refused: typeof e === 'string' ? e : JSON.stringify(e) };
+      },
+    );
+    return id;
+  }, command);
+
+/** The outcome of the command `start` sent as `id`, once there is one. */
+async function outcome(app: App, id: number, command: string, timeout = 45_000) {
+  const started = Date.now();
+  let found: Outcome | null = null;
+  await expect
+    .poll(
+      async () => {
+        found = await app.evaluate(
+          (id) => (window as unknown as Outcomes).e2eOutcomes?.[id] ?? null,
+          id,
+        );
+        return found;
+      },
+      { message: `the answer to ${command}`, timeout },
+    )
+    .not.toBeNull();
+  test.info().annotations.push({ type: command, description: `${Date.now() - started} ms` });
+  return found as unknown as Outcome;
+}
+
 /** A plugin command of the app, with its answer or its refusal. */
-const invoke = (app: App, command: string) =>
-  app.evaluate(
-    (command) =>
-      (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, {}).then(
-        (answer: unknown) => ({ answer: answer ?? null }),
-        (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
-      ),
-    command,
-  );
+const invoke = async (app: App, command: string, timeout?: number) =>
+  outcome(app, await start(app, command), command, timeout);
 
 /** Runs `fn` with the native views of SpringBoard as the root of the lookups, then the page again. */
 async function onSpringBoard<T>(session: Session, fn: () => Promise<T>): Promise<T> {
@@ -165,54 +209,43 @@ test.afterEach(async ({ app }, testInfo) => {
 });
 
 test("iOS asks once, and the plugin gives the push service's token", async ({ app }) => {
+  // The first question after the install may still take a while (see `start`)
+  test.slow();
   // Not yet asked: not allowed. iOS keeps the answer, not the app: a retry finds the first try's
-  // (see `afterEach`). The first question after the app's install can take a minute: iOS 27's
-  // simulator checks Apple Intelligence's availability first (73 s once), later ones answer at once.
-  const before = await invoke(app, 'plugin:hashi|notify_state');
+  // (see `afterEach`).
+  const before = await invoke(app, 'plugin:hashi|notify_state', 180_000);
   if (test.info().retry === 0) expect(before).toEqual({ answer: { granted: false } });
-  // The page's tap: iOS's alert, which waits for the player. The command only starts the request.
-  // While a command in the page runs, Appium's XCUITest driver fails it as soon as an alert shows
-  // ("unexpected alert open"): a page busy for a moment (after the slow first question above)
-  // makes the command outlast the request, and the alert comes before its answer. That alert is
-  // the one asked for. From here on nothing runs in the page until it is answered.
-  try {
-    await app.evaluate(() => {
-      Object.assign(window, {
-        e2ePermission: (window as TauriWindow).__TAURI_INTERNALS__
-          .invoke('plugin:hashi|notify_permission', {})
-          .then(
-            (answer: unknown) => ({ answer }),
-            (e: unknown) => ({ refused: String(e) }),
-          ),
-      });
-      return null;
-    });
-  } catch (e) {
-    if (!(e instanceof WebDriverError && e.error === 'unexpected alert open')) throw e;
-    test.info().annotations.push({ type: 'alert', description: 'before the command answered' });
-  }
-  const allowed = await onSpringBoard(app.session, async () => {
-    for (let i = 0; i < 40; i++) {
-      const allow = await allowButton(app.session);
-      if (allow) {
-        await app.session.command('POST', `/element/${allow}/click`);
-        return true;
+  // The page's tap: iOS's alert, which waits for the player (not on a retry after an Allow). Nothing
+  // runs in the page until it is answered: a script that runs while an alert shows fails
+  // ("unexpected alert open").
+  const permission = await start(app, 'plugin:hashi|notify_permission');
+  if (!('answer' in before && (before.answer as { granted: boolean }).granted)) {
+    const started = Date.now();
+    const allowed = await onSpringBoard(app.session, async () => {
+      while (Date.now() - started < 60_000) {
+        const allow = await allowButton(app.session);
+        if (allow) {
+          await app.session.command('POST', `/element/${allow}/click`);
+          return true;
+        }
+        await sleep(250);
       }
-      await sleep(250);
-    }
-    return false;
-  });
-  if (!allowed)
-    await test.info().attach('springboard', {
-      body: await springBoardSource(app.session),
-      contentType: 'text/xml',
+      return false;
     });
-  expect(allowed || test.info().retry > 0, "iOS's alert with Allow").toBe(true);
-  await expect
-    .poll(() =>
-      app.evaluate(() => (window as unknown as { e2ePermission?: unknown }).e2ePermission),
-    )
-    .toEqual({ answer: { granted: true } });
+    test.info().annotations.push({
+      type: 'alert',
+      description: `${allowed ? 'allowed' : 'not found'} after ${Date.now() - started} ms`,
+    });
+    if (!allowed)
+      await test.info().attach('springboard', {
+        body: await springBoardSource(app.session),
+        contentType: 'text/xml',
+      });
+    expect(allowed, "iOS's alert with Allow").toBe(true);
+  }
+  expect(await outcome(app, permission, 'plugin:hashi|notify_permission')).toEqual({
+    answer: { granted: true },
+  });
   expect(await invoke(app, 'plugin:hashi|notify_state')).toEqual({ answer: { granted: true } });
   // Asked again: iOS doesn't ask twice, the answer stays
   expect(await invoke(app, 'plugin:hashi|notify_permission')).toEqual({

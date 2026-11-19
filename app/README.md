@@ -1510,15 +1510,16 @@ side Tauri refuses them); Game Center's sign-in answers (available, nobody signe
 of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
 GameKit kept, or is refused without one. Notifications (`notifications.spec.ts`, first: iOS asks
 once per install): iOS's alert, allowed through SpringBoard (Appium's `defaultActiveApplication`),
-answers `notify_permission` and `notify_state`. The alert may come while the command that asked for
-it still runs, which Appium fails with "unexpected alert open"; the test takes that as the alert it
-asked for and answers it before it runs anything in the page again. A failed try answers an alert
-it left open (iOS would store the app's end as a no for the retry). The first question after the
-install is slow on iOS 27's simulator (73 s once), later ones answer at once; `notify_token` answers a token of the sandbox or
-says why there is none (noted in the report: an unsigned build has no `aps-environment`, a
-runner's simulator may not reach Apple); a notification of `xcrun simctl push` with our payload
-shows as a banner over the app in front, and a tap on it opens its `url`'s page (`/groups`) in the
-app, also when the tap starts the closed app. The screenshots `start.png`, `play.png`,
+answers `notify_permission` and `notify_state`. The test sends the plugin's commands without waiting
+for them in the script and reads their answers afterwards: while a script runs for more than a
+second, Appium's XCUITest driver keeps asking WebDriverAgent for an alert, which reads the app's
+accessibility tree each time, kept the app busy on iOS 27's simulator (the first `notify_state` took
+73 s to over 120 s) and fails the script once iOS's alert shows. A failed try answers an alert it
+left open (iOS would store the app's end as a no for the retry). `notify_token` answers a token of
+the sandbox or says why there is none (noted in the report: an unsigned build has no
+`aps-environment`, a runner's simulator may not reach Apple); a notification of `xcrun simctl push`
+with our payload shows as a banner over the app in front, and a tap on it opens its `url`'s page
+(`/groups`) in the app, also when the tap starts the closed app. The screenshots `start.png`, `play.png`,
 `play-light.png`, `play-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file), `game-center.png` and
 `notification-tapped.png` are the
