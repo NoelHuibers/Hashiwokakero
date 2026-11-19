@@ -1547,7 +1547,9 @@ in `/etc/hosts`.
 
 In CI, after the build: Appium (`APPIUM_VERSION`, `XCUITEST_VERSION` in the job, installed with npm)
 and the driver's prebuilt WebDriverAgent for simulators (`download-wda --kind sim`; building it with
-Xcode takes minutes), then the tests. A simulator is flaky like an emulator: the config retries a
+Xcode takes minutes), then the tests. The first session after the simulator's boot once found
+WebDriverAgent not started after 180 s: a session that can't start it tries once more. A simulator
+is flaky like an emulator: the config retries a
 failed test once, and the job summary counts the flaky ones next to the device, the times of the
 build, Appium's setup and the tests, and each test's launch time. A failed run also uploads
 `ios-simulator-report`: the Playwright report (with each test's console), Appium's log and the

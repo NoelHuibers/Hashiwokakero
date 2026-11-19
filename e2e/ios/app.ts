@@ -19,7 +19,7 @@ import {
   screenshot,
   WDA,
 } from './device.ts';
-import { NATIVE, Session } from './webdriver.ts';
+import { NATIVE, Session, WebDriverError } from './webdriver.ts';
 
 export { expect };
 
@@ -275,7 +275,7 @@ export const test = base.extend<
   session: [
     async ({ udid }, use) => {
       const d = await device();
-      const session = await Session.create(APPIUM_URL, {
+      const capabilities = {
         platformName: 'iOS',
         'appium:automationName': 'XCUITest',
         'appium:udid': udid,
@@ -297,13 +297,22 @@ export const test = base.extend<
         // writes it into Appium's log, 60 MB of it)
         'appium:showSafariConsoleLog': false,
         ...(WDA ? { 'appium:usePreinstalledWDA': true, 'appium:prebuiltWDAPath': WDA } : {}),
+      };
+      // The first session after the simulator's boot once found WebDriverAgent not started after
+      // 180 s, the next one started it at once: one more try, which the run's log shows
+      const session = await Session.create(APPIUM_URL, capabilities).catch((e: unknown) => {
+        if (!(e instanceof WebDriverError && /Unable to launch WebDriverAgent/.test(e.message)))
+          throw e;
+        console.log(`a second session: ${e.message.split('\n')[0]}`);
+        return Session.create(APPIUM_URL, capabilities);
       });
       await use(session);
       await session.delete().catch(() => {
         // Gone with the simulator already
       });
     },
-    { scope: 'worker', timeout: 480_000 },
+    // Two sessions' worth (`Session.create`)
+    { scope: 'worker', timeout: 960_000 },
   ],
 
   app: async ({ session, udid }, use, testInfo) => {
