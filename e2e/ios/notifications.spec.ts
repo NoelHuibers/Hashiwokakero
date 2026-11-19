@@ -140,36 +140,74 @@ async function push(udid: string, marker: string, url = LINK) {
   }
 }
 
+/** Clicks the first native element with `marker` in its label; `false` without one, or when it went. */
+async function tapLabelled(session: Session, marker: string) {
+  const found = await element(session, `label CONTAINS ${JSON.stringify(marker)}`);
+  if (!found) return false;
+  try {
+    await session.command('POST', `/element/${found}/click`);
+    return true;
+  } catch (e) {
+    // A banner that went between the lookup and the click
+    if (e instanceof WebDriverError && e.error === 'stale element reference') return false;
+    throw e;
+  }
+}
+
 /**
- * Taps the banner of the notification with `marker` while it shows (about five seconds, in the
- * Notification Centre's list after that). A lookup in SpringBoard takes a snapshot of its views,
- * seconds on a busy runner: the search is bounded by time, not by tries. How long it took goes
- * into the report.
+ * Sends a notification with `marker` (`push`) and taps it: its banner while it shows (about five
+ * seconds), else its entry in the Notification Centre, where it stays. A lookup in SpringBoard
+ * takes a snapshot of its views, seconds on a busy runner, and so does a click on what it found,
+ * and `simctl push` took 24 s once: the banner may be gone before the tap. The search starts with
+ * the push; how the notification was tapped and when goes into the report.
  */
-async function tapBanner(app: App, marker: string) {
+async function pushAndTap(app: App, udid: string, marker: string) {
   const started = Date.now();
-  const tapped = await onSpringBoard(app.session, async () => {
-    while (Date.now() - started < 45_000) {
-      const banner = await element(app.session, `label CONTAINS ${JSON.stringify(marker)}`);
-      if (banner) {
-        await app.session.command('POST', `/element/${banner}/click`);
-        return true;
-      }
+  const pushed: { at?: number } = {};
+  const sending = push(udid, marker).finally(() => {
+    pushed.at = Date.now();
+  });
+  sending.catch(() => {
+    // Thrown by the `await` below; a failed push ends the banner's search like a finished one
+  });
+  const how = await onSpringBoard(app.session, async () => {
+    while (pushed.at === undefined || Date.now() - pushed.at < 15_000) {
+      if (await tapLabelled(app.session, marker)) return 'banner';
       await sleep(250);
     }
-    return false;
+    await sending;
+    // The Notification Centre: a swipe down from the top left corner (the right one opens the
+    // Control Centre)
+    const screen = await app.session.command<{ width: number; height: number }>(
+      'GET',
+      '/window/rect',
+    );
+    await app.session.mobile('dragFromToForDuration', {
+      duration: 0.5,
+      fromX: screen.width * 0.2,
+      fromY: 2,
+      toX: screen.width * 0.2,
+      toY: screen.height * 0.6,
+    });
+    const shown = Date.now();
+    while (Date.now() - shown < 30_000) {
+      if (await tapLabelled(app.session, marker)) return 'Notification Centre';
+      await sleep(500);
+    }
+    return null;
   });
+  await sending;
   test.info().annotations.push({
-    type: 'banner',
-    description: `${tapped ? 'tapped' : 'not found'} after ${Date.now() - started} ms`,
+    type: 'notification',
+    description: `${how ? `tapped in the ${how}` : 'not found'} after ${Date.now() - started} ms (pushed after ${pushed.at! - started} ms)`,
   });
-  if (!tapped) {
+  if (!how) {
     await test.info().attach('springboard', {
       body: await springBoardSource(app.session),
       contentType: 'text/xml',
     });
   }
-  expect(tapped, `the banner of ${marker}`).toBe(true);
+  expect(how, `the notification ${marker}`).not.toBeNull();
 }
 
 /** The page of the app in the WebKit inspector after a new start, selected. */
@@ -273,8 +311,7 @@ test('a notification shows while the app is in front, and a tap opens its page',
   // SpringBoard's lookups and, below, a start of the app
   test.slow();
   await app.visit('/rules');
-  await push(udid, 'in-front');
-  await tapBanner(app, 'in-front');
+  await pushAndTap(app, udid, 'in-front');
   // The same page, its router on the link's page (api::native::follow_app_links)
   await expect.poll(() => app.url()).toBe(`${ORIGIN}/groups`);
   expect(await inFront(app.session)).toBe(BUNDLE);
@@ -285,8 +322,7 @@ test('a tap on a notification starts the app on its page', async ({ app, udid })
   // SpringBoard's lookups and, below, a start of the app
   test.slow();
   await app.session.mobile('terminateApp', { bundleId: BUNDLE });
-  await push(udid, 'closed');
-  await tapBanner(app, 'closed');
+  await pushAndTap(app, udid, 'closed');
   await expect
     .poll(() => inFront(app.session), { message: 'the app started by the tap' })
     .toBe(BUNDLE);
