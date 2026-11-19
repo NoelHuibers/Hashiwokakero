@@ -144,6 +144,7 @@
     "group_hint": "In einer deiner Gruppen gibt es ein neues Rätsel.",
     "unavailable": "Benachrichtigungen erreichen dieses Gerät noch nicht. Deine Auswahl ist mit deinem Konto gespeichert und gilt, sobald sie es können.",
     "refused": "Dieses Handy lässt Hashi keine Benachrichtigungen zeigen. Erlaube sie in den Android-Einstellungen für Hashi und schalte sie dann hier noch einmal ein.",
+    "refused_ios": "Dieses Gerät lässt Hashi keine Mitteilungen zeigen. Erlaube sie in den iOS-Einstellungen unter Mitteilungen → Hashi und schalte sie dann hier noch einmal ein.",
     "this_browser": "Dieser Browser",
     "browser_on": "Bekommt Benachrichtigungen.",
     "browser_off": "Bekommt keine Benachrichtigungen.",

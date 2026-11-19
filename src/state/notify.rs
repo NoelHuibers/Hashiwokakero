@@ -20,15 +20,16 @@ pub fn device_kind(app_platform: Option<&str>) -> Option<DeviceKind> {
 
 /// Whether a way of delivery is built, and works here.
 ///
-/// Each one flips with its own change (docs/notifications.md): Web Push where the site has its
-/// key and the browser can take them (`state::web_push`, never in the apps), APNs with the iOS
-/// app's push registration. The Android app asks the server itself, in the background
-/// (`Notifications.kt` in `app/src-tauri/gen/android`).
+/// Each one flipped with its own change (docs/notifications.md): Web Push where the site has its
+/// key and the browser can take them (`state::web_push`, never in the apps), APNs in the iOS app
+/// (its device token, `state::apns`; only the app's build has the plugin for it). The Android
+/// app asks the server itself, in the background (`Notifications.kt` in
+/// `app/src-tauri/gen/android`).
 pub fn delivers(kind: DeviceKind) -> bool {
     match kind {
         DeviceKind::Web => super::web_push::here() == super::web_push::Support::Ready,
         DeviceKind::Android => true,
-        DeviceKind::Apns => false,
+        DeviceKind::Apns => cfg!(feature = "csr"),
     }
 }
 
@@ -63,10 +64,17 @@ fn android() -> bool {
         == Some(DeviceKind::Android)
 }
 
+/// Whether this is the iOS app, which asks for leave to show notifications and gets them through
+/// Apple's push service. Its hint for refused notifications names iOS's settings.
+pub fn ios() -> bool {
+    device_kind(crate::api::app_identity().map(|(platform, _)| platform)) == Some(DeviceKind::Apns)
+}
+
 /// Asks for leave to show notifications on this device, where it needs it.
 ///
-/// In the Android app (13 and newer ask the player, on a tap that turns them on). `false` when
-/// refused: the page then says where to allow them.
+/// In the Android app (13 and newer ask the player, on a tap that turns them on) and the iOS app
+/// (iOS asks once; after a no only its settings change it). `false` when refused: the page then
+/// says where to allow them.
 #[cfg_attr(
     feature = "csr",
     expect(
@@ -76,21 +84,21 @@ fn android() -> bool {
 )]
 pub async fn allowed_here() -> bool {
     #[cfg(feature = "csr")]
-    if android() {
+    if android() || ios() {
         return crate::api::native::notify_permission().await;
     }
     true
 }
 
-/// Whether this device refuses notifications although they are on (`enabled`): the Android
-/// app without Android's leave, which the player took back in its settings or never gave.
+/// Whether this device refuses notifications although they are on (`enabled`): the Android or
+/// iOS app without the system's leave, which the player took back in its settings or never gave.
 #[cfg_attr(
     feature = "csr",
     expect(clippy::future_not_send, reason = "as `allowed_here`")
 )]
 pub async fn refused_here(enabled: bool) -> bool {
     #[cfg(feature = "csr")]
-    if enabled && android() {
+    if enabled && (android() || ios()) {
         return crate::api::native::notify_state()
             .await
             .is_ok_and(|state| !state.granted);
@@ -104,7 +112,9 @@ pub async fn refused_here(enabled: bool) -> bool {
 /// `enabled`: the saved master switch. On, the Android app registers once with the server, in the
 /// page's `locale`, and hands the phone's id and secret to its background poll; off, it stops the
 /// poll and has the server forget the phone. Only with Android's leave: without it, nothing
-/// changes.
+/// changes. The iOS app registers its device token for Apple's push service when that is due
+/// (`state::apns::register`: not yet, a new token, another language, a week since), with iOS's
+/// leave; off, the server forgets the phone.
 #[cfg_attr(
     feature = "csr",
     expect(clippy::future_not_send, reason = "as `allowed_here`")
@@ -133,12 +143,34 @@ pub async fn follow(enabled: bool, locale: Locale) -> Result<(), leptos::prelude
         }
         return Ok(());
     }
+    #[cfg(feature = "csr")]
+    if ios() {
+        if !enabled {
+            super::apns::unregister().await;
+        } else if crate::api::native::notify_state().await?.granted {
+            super::apns::register(locale).await?;
+        }
+        return Ok(());
+    }
     let _ = (enabled, locale);
     Ok(())
 }
 
+/// At the app's start: the iOS app registers its token again when that is due.
+///
+/// Or it ends its registration when iOS's leave was taken back (`state::apns::refresh`). Nothing
+/// elsewhere: the website's browsers have `state::web_push::refresh`, the Android app its own
+/// poll.
+pub fn refresh(locale: Locale) {
+    #[cfg(feature = "csr")]
+    if ios() && super::apns::stored().is_some() {
+        leptos::task::spawn_local(super::apns::refresh(locale));
+    }
+    let _ = locale;
+}
+
 /// Signing out: this device gets no more notifications of the account (the Android app stops
-/// its poll and has the server forget the phone).
+/// its poll and has the server forget the phone, the iOS app has the server forget it).
 pub fn forget_here() {
     #[cfg(feature = "csr")]
     if android() {
@@ -147,6 +179,8 @@ pub fn forget_here() {
                 leptos::logging::warn!("could not stop the notifications: {e}");
             }
         });
+    } else if ios() {
+        leptos::task::spawn_local(super::apns::unregister());
     }
 }
 
@@ -164,14 +198,13 @@ mod tests {
     }
 
     /// The Android app delivers; Web Push only in a browser that takes it (not in these tests),
-    /// APNs not yet: no offer there, and the settings say so.
+    /// APNs only in the iOS app's build (`csr`, not these tests): the website never offers it.
     #[test]
-    fn the_android_app_delivers() {
+    fn the_apps_deliver() {
         assert!(delivers(DeviceKind::Android));
-        for kind in [DeviceKind::Web, DeviceKind::Apns] {
-            assert!(!delivers(kind), "{kind:?}");
-        }
+        assert_eq!(delivers(DeviceKind::Apns), cfg!(feature = "csr"));
+        assert!(!delivers(DeviceKind::Web));
         assert!(!can_deliver());
-        assert!(!android());
+        assert!(!android() && !ios());
     }
 }

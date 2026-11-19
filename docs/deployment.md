@@ -63,6 +63,14 @@ Store credentials in the deployment platform's secret store.
   a pair that doesn't fit stops the server. Keep the pair: a new one ends every
   browser's subscription. `VAPID_SUBJECT`: optional, the contact URL in the
   signature, default `https://hashi.rs`. See [notifications.md](notifications.md#web-push-browsers).
+- `APNS_KEY_P8`, `APNS_KEY_ID` and `APNS_TEAM_ID`: optional, the APNs auth key that
+  sends notifications to the iOS app through Apple's push service: the text of the
+  key's `.p8` file (PEM, newlines kept or as `\n`), its key id (10 characters) and
+  the team id (`Q35TCGM5PW`). Set them with
+  `flyctl secrets set APNS_KEY_P8="$(cat AuthKey_<key id>.p8)" APNS_KEY_ID=<key id> APNS_TEAM_ID=Q35TCGM5PW -a hashi`.
+  Without them nothing goes to iPhones (the app still registers them); part of
+  them or a key that doesn't parse stops the server. `APNS_TOPIC`: optional, the
+  app's bundle id, default `rs.hashi`. See [notifications.md](notifications.md#the-ios-app-apns).
 - `GITHUB_FEEDBACK_REPO`: optional, `owner/name` of the repository for those
   issues, default `NoelHuibers/Hashiwokakero`.
 - `HASHI_APP_MIN_VERSION`: optional, the oldest app version (`x.y.z`) the server

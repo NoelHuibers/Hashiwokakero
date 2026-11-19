@@ -144,6 +144,7 @@
     "group_hint": "Une nouvelle grille est publiée dans un de tes groupes.",
     "unavailable": "Les notifications n’arrivent pas encore sur cet appareil. Tes choix sont enregistrés avec ton compte et s’appliqueront dès que possible.",
     "refused": "Ce téléphone n’autorise pas Hashi à afficher des notifications. Autorise-les dans les paramètres Android de Hashi, puis réactive-les ici.",
+    "refused_ios": "Cet appareil n’autorise pas Hashi à afficher des notifications. Autorise-les dans Réglages d’iOS → Notifications → Hashi, puis réactive-les ici.",
     "this_browser": "Ce navigateur",
     "browser_on": "Reçoit les notifications.",
     "browser_off": "Ne reçoit pas de notifications.",

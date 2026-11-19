@@ -3,8 +3,8 @@
 //! Only where notifications can reach this device (`state::notify::can_deliver`), once per
 //! account, and only to a player who hasn't turned them on yet (`model::should_offer`). In a
 //! browser, yes turns them on in this browser first (`state::web_push`): if the player blocks
-//! them there, the offer says how to allow them instead. In the Android app, yes asks Android for
-//! leave first, then registers the phone (`state::notify::allowed_here`, `follow`).
+//! them there, the offer says how to allow them instead. In the Android and iOS apps, yes asks the
+//! system for leave first, then registers the phone (`state::notify::allowed_here`, `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -109,7 +109,14 @@ pub fn NotificationOffer() -> impl IntoView {
                         }
                     >
                         <p class="text-muted-foreground" role="status" data-testid="notifications-refused">
-                            {t!(i18n, account.notifications.refused)}
+                            {move || {
+                            // The system whose settings allow them
+                            if crate::state::notify::ios() {
+                                td_string!(i18n.get_locale(), account.notifications.refused_ios)
+                            } else {
+                                td_string!(i18n.get_locale(), account.notifications.refused)
+                            }
+                        }}
                         </p>
                     </Show>
                 </Show>

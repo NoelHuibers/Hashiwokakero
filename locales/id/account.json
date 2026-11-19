@@ -144,6 +144,7 @@
     "group_hint": "Teka-teki baru diunggah di salah satu grupmu.",
     "unavailable": "Notifikasi belum bisa sampai ke perangkat ini. Pilihanmu tersimpan di akunmu dan berlaku begitu memungkinkan.",
     "refused": "Ponsel ini tidak mengizinkan Hashi menampilkan notifikasi. Izinkan di setelan Android untuk Hashi, lalu nyalakan lagi di sini.",
+    "refused_ios": "Perangkat ini tidak mengizinkan Hashi menampilkan notifikasi. Izinkan di Pengaturan iOS → Pemberitahuan → Hashi, lalu nyalakan lagi di sini.",
     "this_browser": "Browser ini",
     "browser_on": "Menerima notifikasi.",
     "browser_off": "Tidak menerima notifikasi.",

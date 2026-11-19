@@ -5,8 +5,9 @@
 //! The settings are the account's, delivery is per device: in a browser that can get them
 //! (`state::web_push`), turning them on turns them on here too (the browser asks for permission
 //! first; without it the switch goes back), turning them off here as well, and a row says
-//! whether this browser gets them, with a button for it. In the Android app, turning them on asks
-//! Android for leave first, then the phone registers (`state::notify::allowed_here`, `follow`).
+//! whether this browser gets them, with a button for it. In the Android and iOS apps, turning them
+//! on asks the system for leave first, then the phone registers (`state::notify::allowed_here`,
+//! `follow`).
 
 use leptos::prelude::*;
 use leptos::task::spawn_local;
@@ -58,7 +59,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
     let prefs = RwSignal::new(None::<NotificationPrefs>);
     // What the server has: a failed save goes back to it
     let confirmed = StoredValue::new(None::<NotificationPrefs>);
-    // The Android app without Android's leave
+    // The Android or iOS app without the system's leave
     let refused = RwSignal::new(false);
     Effect::new(move |first: Option<()>| {
         if first.is_none() {
@@ -67,7 +68,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
                     Ok(loaded) => {
                         confirmed.set_value(loaded);
                         prefs.set(loaded);
-                        // The Android app as the settings want it: turned on elsewhere, off
+                        // The app on the phone as the settings want it: turned on elsewhere, off
                         // elsewhere
                         if let Some(p) = loaded {
                             let _ = refused.try_set(refused_here(p.enabled).await);
@@ -186,7 +187,7 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             }));
             return;
         }
-        // The Android app asks Android for leave first: refused, the switches go back
+        // The apps ask the system for leave first: refused, the switches go back
         if next.enabled && !was_on && !browser {
             prefs.set(Some(next));
             spawn_local(async move {
@@ -265,7 +266,14 @@ pub(super) fn NotificationSettings() -> impl IntoView {
             <CardContent class="flex flex-col gap-2">
                 <Show when=move || refused.get()>
                     <p class="rounded-md border border-dashed border-destructive/50 p-2 text-xs text-muted-foreground" data-testid="notifications-refused">
-                        {t!(i18n, account.notifications.refused)}
+                        {move || {
+                            // The system whose settings allow them
+                            if crate::state::notify::ios() {
+                                td_string!(i18n.get_locale(), account.notifications.refused_ios)
+                            } else {
+                                td_string!(i18n.get_locale(), account.notifications.refused)
+                            }
+                        }}
                     </p>
                 </Show>
                 // Known after hydration: the server can't tell what the browser can do

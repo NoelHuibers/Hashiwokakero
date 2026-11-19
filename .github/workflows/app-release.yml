@@ -779,6 +779,15 @@ jobs:
             echo "APPLE_API_ISSUER=$APPLE_API_ISSUER"
             echo "APPLE_API_KEY_PATH=$key/AuthKey_$APPLE_API_KEY_ID.p8"
           } >> "$GITHUB_ENV"
+      # Apple's production push service for the App Store and TestFlight (docs/notifications.md):
+      # the committed entitlements say development, for the simulator and builds signed for
+      # development. Tauri signs the archive with the file as it is before Xcode exports it, so
+      # it has to say production here (a build setting in it would stay unexpanded).
+      - name: Push entitlement
+        working-directory: app/src-tauri/gen/apple/hashi_tauri_iOS
+        run: |
+          plutil -replace aps-environment -string production hashi_tauri_iOS.entitlements
+          [ "$(plutil -extract aps-environment raw hashi_tauri_iOS.entitlements)" = production ]
       # Release, arm64, without beforeBuildCommand (the bundle is there). CFBundleVersion, the build
       # number App Store Connect counts, is the versionCode: it grows with every version, and
       # --build-number would append it as a fourth number, which App Store Connect refuses.
@@ -789,8 +798,8 @@ jobs:
           cargo tauri ios build --ci --target aarch64 --export-method app-store-connect --config "$config"
       # Signed for the App Store by the team (an Apple Distribution certificate and an App Store
       # profile: no devices, TestFlight allowed, not debuggable), the store's ID with the Universal
-      # Links' domain and Game Center, the version and build number, the export compliance answer,
-      # arm64
+      # Links' domain, Game Center and Apple's production push service, the version and build
+      # number, the export compliance answer, arm64
       - name: Check
         run: |
           fail() { echo "::error::$1"; exit 1; }
@@ -820,6 +829,11 @@ jobs:
           [ "$(entitlement com.apple.developer.game-center)" = true ] || fail "no Game Center entitlement (com.apple.developer.game-center)"
           [ "$(get "$RUNNER_TEMP/profile.plist" Entitlements:com.apple.developer.game-center)" = true ] \
             || fail "the profile $(get "$RUNNER_TEMP/profile.plist" Name) has no Game Center"
+          # Push Notifications (docs/notifications.md): Apple's production push service, the App
+          # ID's capability in the profile
+          [ "$(entitlement aps-environment)" = production ] || fail "aps-environment $(entitlement aps-environment), not production"
+          [ "$(get "$RUNNER_TEMP/profile.plist" Entitlements:aps-environment)" = production ] \
+            || fail "the profile $(get "$RUNNER_TEMP/profile.plist" Name) has no Push Notifications for production"
           profile=$(get "$RUNNER_TEMP/profile.plist" Name)
           [ -z "$(get "$RUNNER_TEMP/profile.plist" ProvisionedDevices)" ] || fail "the profile $profile has devices, it isn't an App Store one"
 

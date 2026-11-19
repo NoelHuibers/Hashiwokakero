@@ -178,6 +178,7 @@ pub fn validate_configuration() -> Result<(), String> {
 fn validate_settings(var: impl Fn(&str) -> Option<String>) -> Result<(), String> {
     validate_secrets(&var)?;
     notify::web_push::Vapid::from_env(&var)?;
+    notify::apns::Credentials::from_env(&var)?;
     apps::AppSettings::from_env(&var)?;
     search::SearchSettings::from_env(&var).map(drop)
 }
@@ -293,6 +294,9 @@ mod configuration_tests {
                 "VAPID_PRIVATE_KEY",
                 "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
             ),
+            // A third of APNs' key (server/notify/apns.rs)
+            ("APNS_KEY_ID", "BRP878K87C"),
+            ("APNS_TEAM_ID", "Q35TCGM5PW"),
         ] {
             let with = |k: &str| (k == name).then(|| value.to_string());
             let error = validate_settings(with).unwrap_err();

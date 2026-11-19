@@ -1,6 +1,7 @@
 import GameKit
 import Tauri
 import UIKit
+import UserNotifications
 import WebKit
 
 struct SystemBarsArgs: Decodable {
@@ -48,8 +49,19 @@ struct GamesStatus: Encodable {
   let signedIn: Bool
 }
 
+/// The page's `NotifyState` (src/api/native.rs): whether iOS lets the app show notifications.
+struct NotifyStatus: Encodable {
+  let granted: Bool
+}
+
+/// The page's `PushToken`: the device token for Apple's push service, and which service it is for.
+struct PushToken: Encodable {
+  let token: String
+  let environment: String
+}
+
 // The app's own plugin ("hashi" in src/lib.rs) on iOS, HashiPlugin.kt's counterpart: what the
-// page asks of iOS itself. Its commands are allowed in capabilities/default.json, called through
+// page asks of iOS itself (sharing, the status bar, Game Center, notifications). Its commands are allowed in capabilities/default.json, called through
 // `api::native` of the page (src/api/native.rs in the repository root). Tauri calls them on a
 // queue of its own, UIKit wants the main thread.
 class HashiPlugin: Plugin {
@@ -66,12 +78,120 @@ class HashiPlugin: Plugin {
   /// Set once GameKit's sign-in sheet was shown by itself: once per install, never again.
   private static let promptedKey = "hashi.gameCenterPrompted"
 
+  /// The page's `notify_token`s waiting for iOS's answer, on the main thread, and the round they
+  /// belong to (a late timeout doesn't answer the next round's).
+  private var tokenWaiting: [Invoke] = []
+  private var tokenRound = 0
+  private var tokenObservers: [NSObjectProtocol] = []
+  /// How long iOS gets for a device token.
+  private static let tokenTimeout: TimeInterval = 30
+
   override func load(webview: WKWebView) {
     self.webview = webview
     // iOS has no back button: the swipe from the screen's edge goes back in the page's history,
     // the router's pages (a group, a player, the rules), as the back gesture does on Android
     webview.allowsBackForwardNavigationGestures = true
+    // iOS hands the device token to the app's delegate, which main.mm passes on as these
+    let center = NotificationCenter.default
+    tokenObservers = [
+      center.addObserver(forName: Notification.Name("HashiDeviceToken"), object: nil, queue: .main) {
+        [weak self] note in
+        self?.answerToken(note.object as? Data, error: nil)
+      },
+      center.addObserver(forName: Notification.Name("HashiDeviceTokenFailed"), object: nil, queue: .main) {
+        [weak self] note in
+        let error = (note.object as? NSError)?.localizedDescription ?? "unknown error"
+        self?.answerToken(nil, error: "iOS gave no device token: \(error)")
+      },
+    ]
   }
+
+  /**
+   * Whether the app may show notifications, asking the player if iOS hasn't asked yet (once per
+   * install: after a no only iOS's settings change it). Alerts and sounds, no badge.
+   */
+  @objc public func notifyPermission(_ invoke: Invoke) {
+    UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { granted, error in
+      if let error {
+        Logger.info("notifications: \(error.localizedDescription)")
+      }
+      invoke.resolve(NotifyStatus(granted: granted))
+    }
+  }
+
+  /// Whether the app may show notifications, without asking.
+  @objc public func notifyState(_ invoke: Invoke) {
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      invoke.resolve(NotifyStatus(granted: HashiPlugin.allows(settings.authorizationStatus)))
+    }
+  }
+
+  /**
+   * The device token for Apple's push service (hex) and the service it is for, which the page
+   * registers with the server: `registerForRemoteNotifications`, whose answer comes to the app's
+   * delegate (main.mm). iOS gives the same token every time until it gives the app a new one
+   * (after a restore, a reinstall), so the page asks at every start. Refused without an answer
+   * within 30 s.
+   */
+  @objc public func notifyToken(_ invoke: Invoke) {
+    DispatchQueue.main.async {
+      self.tokenWaiting.append(invoke)
+      guard self.tokenWaiting.count == 1 else { return }
+      let round = self.tokenRound
+      UIApplication.shared.registerForRemoteNotifications()
+      DispatchQueue.main.asyncAfter(deadline: .now() + HashiPlugin.tokenTimeout) {
+        if round == self.tokenRound {
+          self.answerToken(nil, error: "iOS gave no device token within 30 s")
+        }
+      }
+    }
+  }
+
+  /// Answers the `notify_token`s waiting, on the main thread.
+  private func answerToken(_ token: Data?, error: String?) {
+    let waiting = tokenWaiting
+    tokenWaiting = []
+    tokenRound += 1
+    for invoke in waiting {
+      if let token {
+        let hex = token.map { String(format: "%02x", $0) }.joined()
+        invoke.resolve(PushToken(token: hex, environment: HashiPlugin.apsEnvironment))
+      } else {
+        invoke.reject(error ?? "iOS gave no device token")
+      }
+    }
+  }
+
+  private static func allows(_ status: UNAuthorizationStatus) -> Bool {
+    switch status {
+    case .authorized, .provisional, .ephemeral: return true
+    default: return false
+    }
+  }
+
+  /**
+   * The app's `aps-environment`, which says whose tokens iOS gives it: the sandbox's for a build
+   * signed for development, production's for the App Store and TestFlight. A signed build has it
+   * in its provisioning profile, which the App Store's and TestFlight's installs don't have
+   * (production); the simulator's tokens are the sandbox's.
+   */
+  static let apsEnvironment: String = {
+    #if targetEnvironment(simulator)
+      return "development"
+    #else
+      guard
+        let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+        let data = try? Data(contentsOf: url),
+        let start = data.range(of: Data("<?xml".utf8)),
+        let end = data.range(of: Data("</plist>".utf8), in: start.lowerBound..<data.endIndex),
+        let plist = try? PropertyListSerialization.propertyList(
+          from: data.subdata(in: start.lowerBound..<end.upperBound), format: nil) as? [String: Any],
+        let entitlements = plist["Entitlements"] as? [String: Any],
+        let environment = entitlements["aps-environment"] as? String
+      else { return "production" }
+      return environment
+    #endif
+  }()
 
   /**
    * The status bar's icons for the page's theme, not the phone's: light ones over a dark page,

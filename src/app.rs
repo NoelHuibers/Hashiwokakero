@@ -312,8 +312,9 @@ fn AppLinks() -> impl IntoView {
     crate::api::native::follow_app_links(leptos_router::hooks::use_navigate());
 }
 
-/// A browser that gets notifications registers again now and then, and in a new language
-/// (`state::web_push::refresh`).
+/// A browser or iPhone that gets notifications registers again now and then, and in a new
+/// language (`state::web_push::refresh`, `state::notify::refresh`): the iPhone also when iOS
+/// gave the app a new token.
 #[component]
 fn PushRefresh() -> impl IntoView {
     let i18n = use_i18n();
@@ -322,6 +323,7 @@ fn PushRefresh() -> impl IntoView {
         if crate::state::web_push::stored().is_some() {
             leptos::task::spawn_local(crate::state::web_push::refresh(locale));
         }
+        crate::state::notify::refresh(locale);
     });
 }
 

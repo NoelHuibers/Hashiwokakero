@@ -144,6 +144,7 @@
     "group_hint": "W jednej z twoich grup pojawia się nowa łamigłówka.",
     "unavailable": "Powiadomienia nie docierają jeszcze na to urządzenie. Twój wybór jest zapisany na koncie i zacznie działać, gdy tylko będzie to możliwe.",
     "refused": "Ten telefon nie pozwala Hashi pokazywać powiadomień. Zezwól na nie w ustawieniach Androida dla Hashi, a potem włącz je tu ponownie.",
+    "refused_ios": "To urządzenie nie pozwala Hashi pokazywać powiadomień. Zezwól na nie w Ustawieniach iOS → Powiadomienia → Hashi, a potem włącz je tu ponownie.",
     "this_browser": "Ta przeglądarka",
     "browser_on": "Otrzymuje powiadomienia.",
     "browser_off": "Nie otrzymuje powiadomień.",

@@ -23,6 +23,7 @@ fn main() {
         "notify_state",
         "notify_start",
         "notify_stop",
+        "notify_token",
     ]);
     tauri_build::try_build(
         tauri_build::Attributes::new()

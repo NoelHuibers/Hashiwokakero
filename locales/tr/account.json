@@ -144,6 +144,7 @@
     "group_hint": "Gruplarından birinde yeni bir bulmaca paylaşılıyor.",
     "unavailable": "Bildirimler bu cihaza henüz ulaşamıyor. Seçimlerin hesabınla kaydedildi, mümkün olur olmaz geçerli olacak.",
     "refused": "Bu telefon Hashi'nin bildirim göstermesine izin vermiyor. Android ayarlarında Hashi için bildirimlere izin ver, sonra burada yeniden aç.",
+    "refused_ios": "Bu cihaz Hashi'nin bildirim göstermesine izin vermiyor. iOS Ayarlar → Bildirimler → Hashi bölümünde izin ver, sonra burada yeniden aç.",
     "this_browser": "Bu tarayıcı",
     "browser_on": "Bildirim alıyor.",
     "browser_off": "Bildirim almıyor.",

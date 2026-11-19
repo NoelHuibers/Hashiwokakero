@@ -144,6 +144,7 @@
     "group_hint": "Er staat een nieuwe puzzel in een van je groepen.",
     "unavailable": "Meldingen bereiken dit apparaat nog niet. Je keuzes zijn opgeslagen bij je account en gelden zodra dat kan.",
     "refused": "Deze telefoon laat Hashi geen meldingen tonen. Sta ze toe in de Android-instellingen voor Hashi en zet ze hier daarna opnieuw aan.",
+    "refused_ios": "Dit apparaat laat Hashi geen meldingen tonen. Sta ze toe in de iOS-instellingen onder Berichtgeving → Hashi en zet ze hier daarna opnieuw aan.",
     "this_browser": "Deze browser",
     "browser_on": "Krijgt meldingen.",
     "browser_off": "Krijgt geen meldingen.",
