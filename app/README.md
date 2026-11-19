@@ -1508,9 +1508,12 @@ inset is 0, the body's and the tab bar's sides clear the Dynamic Island, as the 
 gives them; the app's own plugin answers `system_bars` and `share` with a file (without its Swift
 side Tauri refuses them); Game Center's sign-in answers (available, nobody signed in) with nothing
 of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
-GameKit kept, or is refused without one. Notifications (`notifications.spec.ts`, first: iOS asks
-once per simulator): iOS's alert, allowed through SpringBoard (Appium's `defaultActiveApplication`),
-answers `notify_permission` and `notify_state`; `notify_token` answers a token of the sandbox or
+GameKit kept, or is refused without one. Notifications (`notifications.spec.ts`; the app is
+installed anew first, which makes iOS forget its permission and ask again): iOS's alert, allowed
+through SpringBoard (Appium's `defaultActiveApplication`), answers `notify_permission` and
+`notify_state`. The alert may come while the command that asked for it still runs, which Appium
+fails with "unexpected alert open"; the test takes that as the alert it asked for and answers it
+before it runs anything in the page again; `notify_token` answers a token of the sandbox or
 says why there is none (noted in the report: an unsigned build has no `aps-environment`, a
 runner's simulator may not reach Apple); a notification of `xcrun simctl push` with our payload
 shows as a banner over the app in front, and a tap on it opens its `url`'s page (`/groups`) in the
