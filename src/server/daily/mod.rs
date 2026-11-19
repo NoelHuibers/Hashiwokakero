@@ -8,6 +8,9 @@ mod stamps;
 mod stats;
 #[cfg(test)]
 mod stored_tests;
+pub(crate) mod streak;
+#[cfg(test)]
+mod streak_tests;
 #[cfg(test)]
 mod tests;
 

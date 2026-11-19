@@ -214,13 +214,24 @@ pub struct DayResult {
     /// `None` if the day wasn't finished (or the solution was revealed).
     pub time_ms: Option<i64>,
     pub rank: Option<i64>,
+    /// Caught up later with a streak save: unranked, `time_ms` only for the player themselves
+    /// (see `docs/streak-saves.md`).
+    #[serde(default)]
+    pub caught_up: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct UserStats {
     pub solved: i64,
+    /// Caught-up days count for the streaks, see [`super::streak_state`].
     pub current_streak: i64,
     pub best_streak: i64,
+    /// Streak saves held, `0..=MAX_SAVES`.
+    #[serde(default)]
+    pub saves: i64,
+    /// The open gap of the streak, the missed days that can still be caught up, oldest first.
+    #[serde(default)]
+    pub missed: Vec<i64>,
     pub best_time_ms: Option<i64>,
     pub average_time_ms: Option<i64>,
     /// Finished dailies of the last weeks, oldest first.

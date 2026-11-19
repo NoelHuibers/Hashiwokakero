@@ -282,6 +282,15 @@ async fn write_rows(conn: &Connection, version: usize) {
         // The guest's board in the group's race, as they last reported it
         run("UPDATE group_race_players SET board = '20' WHERE race_id = 1 AND user_id = 2").await;
     }
+    if version >= 32 {
+        // noel caught up the day before the daily, the guest started catching it up
+        run("
+            INSERT INTO catch_ups (user_id, day, started_at, finished_at, time_ms)
+                VALUES (1, 20744, 97000, 98000, 1000);
+            INSERT INTO catch_ups (user_id, day, started_at) VALUES (2, 20744, 97500);
+        ")
+        .await;
+    }
     if version >= 21 {
         // The standings of the month of the daily, stored once it was over: noel won it
         run(r"
@@ -302,7 +311,7 @@ async fn count(conn: &Connection, sql: &str) -> i64 {
 async fn old_databases_migrate_with_their_data() {
     assert_eq!(
         MIGRATIONS.len(),
-        31,
+        32,
         "a new migration needs rows in `write_rows`"
     );
     for version in 1..=MIGRATIONS.len() {
@@ -549,6 +558,15 @@ async fn old_databases_migrate_with_their_data() {
             (
                 "SELECT COUNT(*) FROM group_race_players WHERE board = '20' AND user_id = 2",
                 i64::from(version >= 31),
+            ),
+            // Catch-ups came with version 32
+            (
+                "SELECT COUNT(*) FROM catch_ups WHERE finished_at IS NOT NULL AND time_ms = 1000 AND user_id = 1",
+                i64::from(version >= 32),
+            ),
+            (
+                "SELECT COUNT(*) FROM catch_ups WHERE finished_at IS NULL",
+                i64::from(version >= 32),
             ),
             // Notifications: nothing for anyone from before them, noel's from 30 on
             (

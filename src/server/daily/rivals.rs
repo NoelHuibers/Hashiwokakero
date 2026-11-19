@@ -13,6 +13,7 @@ use libsql::{Connection, params};
 
 use super::fame::all_time;
 use super::stamps::shown_stamps;
+use super::streak::{saves_from, states};
 use super::{attempt, today};
 use crate::model::{
     AllTimeEntry, ApiError, AttemptInfo, Duel, HeadToHead, MAX_RIVALS, RivalDay, RivalRow,
@@ -263,11 +264,19 @@ pub async fn board(conn: &Connection, user: i64) -> Result<RivalsBoard, ServerFn
     let ids: Vec<i64> = std::iter::once(user)
         .chain(list.iter().map(|r| r.id))
         .collect();
-    let mut stats: HashMap<i64, (AllTimeEntry, i64)> = all_time(conn, today(), Some(&ids))
+    let today = today();
+    let mut stats: HashMap<i64, (AllTimeEntry, i64)> = all_time(conn, today, Some(&ids))
         .await?
         .into_iter()
         .map(|(e, first)| (e.user_id, (e, first)))
         .collect();
+    // With saves, an open gap keeps a streak going: what the player's profile says. Without, the
+    // hall of fame's streaks are those already
+    let saves_from = saves_from();
+    let streaks = match saves_from {
+        Some(_) => states(conn, &ids, today, saves_from).await?,
+        None => HashMap::new(),
+    };
     let mut records = records(conn, user, &ids[1..]).await?;
     let stamps = shown_stamps(conn, &ids).await?;
     let me = user_by_id(conn, user).await?;
@@ -300,6 +309,9 @@ pub async fn board(conn: &Connection, user: i64) -> Result<RivalsBoard, ServerFn
                 (entry.name, entry.guest) = (name, guest);
             }
             entry.stamp = stamps.get(&id).copied();
+            if let Some(streak) = streaks.get(&id) {
+                (entry.best_streak, entry.current_streak) = (streak.best, streak.current);
+            }
             let me = id == user;
             let record = (!me).then(|| records.remove(&id).unwrap_or_default());
             (RivalRow { entry, me, record }, first)

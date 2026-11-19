@@ -701,6 +701,12 @@ pub(super) async fn merge_guest(
     // Groups first, while the guest's dailies are still theirs: the groups they leave keep what
     // they laid in their rivers. At most MAX_GROUPS come along, see there
     super::groups::merge_guest(&tx, user, guest).await?;
+    // Catch-ups before the attempts: which of them stay depends on where the ranked ones are
+    for sql in super::daily::streak::MERGE_GUEST {
+        tx.execute(sql, params![user, guest])
+            .await
+            .map_err(db_err)?;
+    }
     for sql in [
         "UPDATE OR IGNORE attempts SET user_id = ?1 WHERE user_id = ?2",
         "UPDATE OR IGNORE stamps SET user_id = ?1 WHERE user_id = ?2",
@@ -725,6 +731,7 @@ pub(super) async fn merge_guest(
     }
     for sql in [
         "DELETE FROM attempts WHERE user_id = ?1",
+        "DELETE FROM catch_ups WHERE user_id = ?1",
         "DELETE FROM stamps WHERE user_id = ?1",
         "DELETE FROM rivals WHERE user_id = ?1 OR rival_id = ?1",
         "DELETE FROM sessions WHERE user_id = ?1",
@@ -778,12 +785,13 @@ pub async fn delete_account(
 /// others' go, see `groups::kadai::erase`), their lines in races (lobbies they host go, see
 /// `groups::race::ERASE`), results on shared puzzles (their links stay without a name, see
 /// `shares::ERASE`), notification settings, devices and notifications (theirs, and those about
-/// them, see `notify::ERASE`), Dojo submissions, and of the daily results the
-/// boards, move logs, devices and unranked attempts. What stays are the ranked times and
-/// penalties, under a user without a name (`deleted_at`), so the rankings of old days and the
-/// medals of everyone else don't change. A user without ranked times remains as an anonymous
-/// tombstone, so numeric admin grants can never transfer to a reused id. Archived Dojo seasons
-/// keep the numbers of the user's solvers, without their names, links or a way back to the user.
+/// them, see `notify::ERASE`), Dojo submissions, catch-ups (`daily::streak::ERASE`), and of the
+/// daily results the boards, move logs, devices and unranked attempts. What stays are the ranked
+/// times and penalties, under a user without a name (`deleted_at`), so the rankings of old days
+/// and the medals of everyone else don't change. A user without ranked times remains as an
+/// anonymous tombstone, so numeric admin grants can never transfer to a reused id. Archived Dojo
+/// seasons keep the numbers of the user's solvers, without their names, links or a way back to
+/// the user.
 pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
     let tx = conn.transaction().await.map_err(db_err)?;
     for sql in super::groups::hanko::ERASE
@@ -796,6 +804,7 @@ pub async fn erase(conn: &Connection, user: i64) -> Result<(), ServerFnError> {
         .chain(super::groups::race::ERASE)
         .chain(super::shares::ERASE)
         .chain(super::notify::ERASE)
+        .chain(super::daily::streak::ERASE)
     {
         tx.execute(sql, params![user]).await.map_err(db_err)?;
     }

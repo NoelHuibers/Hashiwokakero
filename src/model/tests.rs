@@ -153,7 +153,47 @@ proptest! {
             .filter(|&&last| last >= today - 1)
             .map_or(0, |&last| run_ending(last));
         let to_i64 = |n: usize| i64::try_from(n).expect("small");
-        prop_assert_eq!(streaks(&days, today), (to_i64(current), to_i64(best)));
+        let state = streak_state(&days, &[], &[], today, None);
+        prop_assert_eq!((state.current, state.best), (to_i64(current), to_i64(best)));
+        prop_assert_eq!((state.saves, state.missed.len()), (0, 0));
+    }
+
+    /// Without saves, caught-up and blocked days change nothing. With them, the best streak is
+    /// the longest run of ranked and caught-up days, the saves stay in 0..=2, and an open gap is
+    /// at most as long as the saves held, lies in the last two days and only makes the current
+    /// streak longer.
+    #[test]
+    fn streak_saves_stay_in_bounds(
+        ranked in prop::collection::btree_set(0..60i64, 0..40),
+        caught_up in prop::collection::btree_set(0..60i64, 0..10),
+        blocked in prop::collection::vec(0..60i64, 0..5),
+        today in 0..70i64,
+        from in 0..60i64,
+    ) {
+        // Nothing after today
+        let ranked: Vec<i64> = ranked.into_iter().filter(|&d| d <= today).collect();
+        let caught_up: Vec<i64> = caught_up.into_iter().filter(|&d| d <= today).collect();
+        let plain = streak_state(&ranked, &[], &[], today, None);
+        prop_assert_eq!(&streak_state(&ranked, &caught_up, &blocked, today, None), &plain);
+
+        let state = streak_state(&ranked, &caught_up, &blocked, today, Some(from));
+        let mut all: Vec<i64> = ranked.iter().copied()
+            .chain(caught_up.iter().copied().filter(|&d| d >= from))
+            .collect();
+        all.sort_unstable();
+        all.dedup();
+        let without = streak_state(&all, &[], &[], today, None);
+        prop_assert_eq!(state.best, without.best);
+        prop_assert!((0..=MAX_SAVES).contains(&state.saves));
+        prop_assert!(state.current >= without.current);
+        prop_assert!(i64::try_from(state.missed.len()).unwrap() <= state.saves);
+        for &day in &state.missed {
+            prop_assert!((today - CATCH_UP_DAYS..today).contains(&day));
+            prop_assert!(!all.contains(&day) && !blocked.contains(&day));
+        }
+        if state.missed.is_empty() {
+            prop_assert_eq!(state.current, without.current);
+        }
     }
 
     /// Durations read like a clock: tenths under ten minutes, hours from an hour on.

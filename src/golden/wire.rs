@@ -153,6 +153,8 @@ fn user_stats() -> UserStats {
         solved: 42,
         current_streak: 3,
         best_streak: 12,
+        saves: 1,
+        missed: vec![20_383],
         best_time_ms: Some(61_000),
         average_time_ms: Some(180_500),
         recent: vec![
@@ -160,11 +162,19 @@ fn user_stats() -> UserStats {
                 day: 20_380,
                 time_ms: Some(61_000),
                 rank: Some(1),
+                caught_up: false,
             },
             DayResult {
                 day: 20_381,
+                time_ms: Some(75_000),
+                rank: None,
+                caught_up: true,
+            },
+            DayResult {
+                day: 20_382,
                 time_ms: None,
                 rank: None,
+                caught_up: false,
             },
         ],
         gold: 2,
@@ -961,6 +971,17 @@ fn responses_without_later_fields_load() {
         serde_json::from_str(r#"{"stamp":"First","earned_at":null,"progress":0,"target":1}"#)
             .unwrap();
     assert_eq!(progress.holders, 0, "{RESPONSES}");
+    let stats: UserStats = serde_json::from_str(
+        r#"{"solved":1,"current_streak":1,"best_streak":1,"best_time_ms":1,"average_time_ms":1,
+            "recent":[{"day":5,"time_ms":1,"rank":1}],"gold":0,"silver":0,"bronze":0,
+            "month_rank":null,"month_points":0,"stamps":[]}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        (stats.saves, stats.missed.len(), stats.recent[0].caught_up),
+        (0, 0, false),
+        "{RESPONSES}"
+    );
 }
 
 /// The start of the daily sends the daily with the player at its side: a page or app from before

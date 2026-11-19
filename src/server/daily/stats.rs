@@ -6,33 +6,20 @@ use libsql::{Connection, params};
 
 use super::fame::month_points;
 use super::stamps::{book, holders, shown_stamp};
+use super::streak::{days_of, saves_from};
 use super::today;
-use crate::model::{DayResult, PlayerProfile, UserStats, month_of, streaks};
+use crate::model::{DayResult, PlayerProfile, UserStats, month_of};
 use crate::server::count;
 use crate::server::db::db_err;
 
 /// Days shown in the player's recent results.
 const RECENT_DAYS: i64 = 35;
 
-async fn solved_days(conn: &Connection, user: i64) -> Result<Vec<i64>, ServerFnError> {
-    let mut rows = conn
-        .query(
-            "SELECT day FROM attempts WHERE user_id = ?1 AND finished_at IS NOT NULL AND revealed = 0 AND flag IS NULL ORDER BY day",
-            params![user],
-        )
-        .await
-        .map_err(db_err)?;
-    let mut days = Vec::new();
-    while let Some(row) = rows.next().await.map_err(db_err)? {
-        days.push(row.get(0).map_err(db_err)?);
-    }
-    Ok(days)
-}
-
 pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnError> {
     let today = today();
-    let days = solved_days(conn, user).await?;
-    let (current_streak, best_streak) = streaks(&days, today);
+    let saves_from = saves_from();
+    let days = days_of(conn, user, saves_from).await?;
+    let streak = days.state(today, saves_from);
 
     // (day, time, rank) of every ranked finish, ranks in the same query to save round trips
     let mut rows = conn
@@ -61,10 +48,15 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     let recent = (today - RECENT_DAYS + 1..=today)
         .map(|day| {
             let found = finished.iter().find(|f| f.0 == day);
+            let caught_up = found
+                .is_none()
+                .then(|| days.caught_up.iter().find(|c| c.0 == day))
+                .flatten();
             DayResult {
                 day,
-                time_ms: found.map(|f| f.1),
+                time_ms: found.map(|f| f.1).or_else(|| caught_up.map(|c| c.1)),
                 rank: found.map(|f| f.2),
+                caught_up: caught_up.is_some(),
             }
         })
         .collect();
@@ -87,9 +79,11 @@ pub async fn stats(conn: &Connection, user: i64) -> Result<UserStats, ServerFnEr
     }
 
     Ok(UserStats {
-        solved: count(days.len()),
-        current_streak,
-        best_streak,
+        solved: count(days.ranked.len()),
+        current_streak: streak.current,
+        best_streak: streak.best,
+        saves: streak.saves,
+        missed: streak.missed,
         best_time_ms,
         average_time_ms,
         recent,
@@ -125,8 +119,16 @@ pub async fn profile(conn: &Connection, user: i64) -> Result<Option<PlayerProfil
         name,
         guest: guest != 0,
         created_at,
-        stats: stats(conn, user).await?,
+        stats: public(stats(conn, user).await?),
     }))
+}
+
+/// What everybody sees of a player's statistics: a catch-up's time is the player's own.
+fn public(mut stats: UserStats) -> UserStats {
+    for day in stats.recent.iter_mut().filter(|d| d.caught_up) {
+        day.time_ms = None;
+    }
+    stats
 }
 
 // Only the installed HTTP database uses this cache. Domain helpers above also serve independent
@@ -339,7 +341,7 @@ async fn profile_with_cache(
             row.get::<i64>(2).map_err(db_err)?,
         )
     };
-    let stats = cache.get_or_compute(user, || stats(conn, user)).await?;
+    let stats = public(cache.get_or_compute(user, || stats(conn, user)).await?);
     Ok(Some(PlayerProfile {
         id: user,
         name,

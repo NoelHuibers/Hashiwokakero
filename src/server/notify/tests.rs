@@ -440,6 +440,77 @@ async fn no_last_call_without_a_streak_or_once_the_daily_is_done() {
     assert_eq!(queue_last_calls(&conn, at(day, 23.9)).await.unwrap(), 0);
 }
 
+/// With saves, the streak is open while a gap can still be caught up: the last call reaches
+/// those players too, and a caught-up yesterday counts like a solved one. Without saves, neither.
+#[tokio::test]
+async fn the_last_call_reaches_a_player_with_an_open_gap() {
+    use crate::server::daily::streak::SavesFrom;
+
+    let conn = db("last-call-gap").await;
+    let day = day();
+    let one_gap = player(&conn, "onegap").await;
+    let two_gap = player(&conn, "twogap").await;
+    let no_save = player(&conn, "nosave").await;
+    let revealed = player(&conn, "revealed").await;
+    let caught_up = player(&conn, "caughtup").await;
+    for user in [one_gap, two_gap, no_save, revealed, caught_up] {
+        wants_all(&conn, user, None).await;
+    }
+    // A week (a save), then yesterday missed
+    for user in [one_gap, revealed, caught_up] {
+        for d in day - 8..=day - 2 {
+            solved(&conn, user, d, 60_000).await;
+        }
+    }
+    // Two weeks (two saves), then two days missed
+    for d in day - 16..=day - 3 {
+        solved(&conn, two_gap, d, 60_000).await;
+    }
+    // Six days: no save yet
+    for d in day - 7..=day - 2 {
+        solved(&conn, no_save, d, 60_000).await;
+    }
+    // Yesterday's solution shown: it can't be caught up
+    conn.execute(
+        "INSERT INTO attempts (user_id, day, started_at, revealed) VALUES (?1, ?2, 0, 1)",
+        params![revealed, day - 1],
+    )
+    .await
+    .unwrap();
+    // Yesterday caught up
+    conn.execute(
+        "INSERT INTO catch_ups (user_id, day, started_at, finished_at, time_ms) VALUES (?1, ?2, 0, 1, 1)",
+        params![caught_up, day - 1],
+    )
+    .await
+    .unwrap();
+
+    let off = SavesFrom::set(None);
+    assert_eq!(
+        next_last_call(&conn, one_gap, at(day, 3.0)).await.unwrap(),
+        Some(at(day + 1, 21.0))
+    );
+    assert_eq!(queue_last_calls(&conn, at(day, 21.0)).await.unwrap(), 0);
+    drop(off);
+
+    let _on = SavesFrom::set(Some(day - 30));
+    assert_eq!(
+        next_last_call(&conn, one_gap, at(day, 3.0)).await.unwrap(),
+        Some(at(day, 21.0))
+    );
+    assert_eq!(
+        next_last_call(&conn, no_save, at(day, 3.0)).await.unwrap(),
+        Some(at(day + 1, 21.0))
+    );
+    assert_eq!(queue_last_calls(&conn, at(day, 21.0)).await.unwrap(), 3);
+    for user in [one_gap, two_gap, caught_up] {
+        assert_eq!(kinds(&conn, user).await, ["last_call"]);
+    }
+    for user in [no_save, revealed] {
+        assert_eq!(kinds(&conn, user).await, Vec::<String>::new());
+    }
+}
+
 #[tokio::test]
 async fn a_last_call_for_a_daily_done_since_never_goes_out() {
     let conn = db("last-call-done").await;

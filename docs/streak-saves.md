@@ -50,19 +50,28 @@ streak_state(ranked, caught_up, today, saves_from) -> StreakState {
 ```
 
 - `ranked`: days with a ranked finish (as today: finished, not revealed, not flagged);
-  `caught_up`: days from `catch_ups`. A day is in at most one of them.
+  `caught_up`: days of finished catch-ups, only those from `saves_from` on count (none with
+  `None`). A day is in at most one of them; if it is in both anyway, it counts once, as ranked.
+  The function also takes the days with a revealed or flagged run, which can't be caught up.
 - Walking the days: a day right after the previous counted day extends the run, any other
   starts a new one. On days from `saves_from` on, every 7th day of the run (counted from
   `saves_from` or the run's start, whichever is later) earns a save up to 2; a caught-up day
-  spends one where it lies. Saves carry over when a run ends.
+  spends one where it lies (first, then it can earn one as the 7th day). Saves carry over when
+  a run ends. The days after an open gap are a run of their own until the gap is caught up.
 - The open gap: the latest run of missed days before today. It stays open if all its days
   lie in `today - 2 ..= today - 1`, none of them has a revealed or flagged run, and it isn't
   longer than the saves held. Its days are `missed`, and the current streak is the run before
-  it plus the counted days after it (a gap that isn't open breaks the run, as now).
+  it plus the counted days after it (a gap that isn't open breaks the run, as now). `best` only
+  counts runs without a gap, so it's exact (the stamps and the hall of fame need that); while a
+  gap is open, `current` can be up to 2 more than `best`.
 - Every reader goes through this function: `UserStats` (record tiles, profile), rivals,
   stamps, games leaderboards, the catch-up checks and the last call. The hall of fame ranks
   everyone in one SQL query: it takes the union of ranked and caught-up days, so its best
-  streaks are exact; its current streak skips the open gap (at most 2 days, a tie-breaker).
+  streaks are exact; its current streak doesn't know about saves, an open gap breaks it there
+  (for at most 2 days, and it only breaks ties). Rivals start from the same query and then take
+  `streak_state`'s streaks, as the profiles show them. The last call looks at the players whose
+  last counted day is at most 3 days back, and walks the history only of those without
+  yesterday.
 
 ## Storage
 
@@ -82,8 +91,13 @@ CREATE TABLE IF NOT EXISTS catch_ups (
 ```
 
 Account deletion deletes the player's rows, guest merging moves them like `attempts`, guest
-cleanup removes them with the guest. The privacy page lists them with the daily results.
-A finish invalidates the player's cached profile.
+cleanup removes them with the guest. When merging, a ranked finish of the day (the account's,
+or the guest's that moves over) wins over a catch-up of it, and of two catch-ups of a day the
+account's stays. The privacy page lists them with the daily results. A finish invalidates the
+player's cached profile.
+
+A catch-up's time is the player's own: `UserStats::recent` has it for the player, the public
+profile only shows that the day was caught up.
 
 ## Shown
 

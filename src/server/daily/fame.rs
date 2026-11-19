@@ -6,6 +6,7 @@ use leptos::prelude::ServerFnError;
 use libsql::{Connection, TransactionBehavior, params};
 
 use super::stamps::shown_stamps;
+use super::streak::{counted_days, saves_from};
 use super::today;
 use crate::model::{
     AllTimeEntry, HallOfFame, LAUNCH_DAY, MonthBoard, MonthEntry, month_days, month_of, points,
@@ -34,14 +35,15 @@ pub(super) fn placed(filter: &str) -> String {
     )
 }
 
-/// Solved dailies, medals and streaks of every player who solved one, or of `only` those
-/// players, with the time of their first ranked finish (for tie-breaks). `rank` is 0 and `stamp`
+/// Solved dailies, medals and streaks (caught-up days included) of every player who solved one,
+/// or of `only` those players, with the time of their first ranked finish (for tie-breaks). `rank` is 0 and `stamp`
 /// `None`, for the caller to fill in.
 pub(super) async fn all_time(
     conn: &Connection,
     today: i64,
     only: Option<&[i64]>,
 ) -> Result<Vec<(AllTimeEntry, i64)>, ServerFnError> {
+    let saves_from = saves_from();
     // Ids are integers from the database
     let only = only.map_or_else(
         || "1".to_string(),
@@ -50,15 +52,20 @@ pub(super) async fn all_time(
             format!("p.user_id IN ({})", ids.join(","))
         },
     );
-    // Streaks: consecutive days share `day - row_number`, each group is one streak
+    // Streaks: consecutive days share `day - row_number`, each group is one streak. The days
+    // are the ranked ones and the caught-up ones (`streak::counted_days`), so the best streaks
+    // are exact; the current one doesn't know about saves, an open gap breaks it here (for at
+    // most two days, and it only breaks ties)
+    let counted = counted_days("SELECT user_id, day FROM p", saves_from);
     let mut rows = conn
         .query(
             &format!(
                 "WITH p AS ({placed}),
+                 d AS ({counted}),
                  runs AS (
                     SELECT user_id, COUNT(*) AS len, MAX(day) AS last FROM (
                         SELECT user_id, day, day - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY day) AS run
-                        FROM p
+                        FROM d
                     ) GROUP BY user_id, run
                  ),
                  streaks AS (

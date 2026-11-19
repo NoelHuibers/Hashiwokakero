@@ -758,6 +758,20 @@ CREATE INDEX IF NOT EXISTS shared_results_finished ON shared_results (finished_a
 -- '0120'. The solved one with a verified finish. NULL: nothing reported yet
 ALTER TABLE group_race_players ADD COLUMN board TEXT;
 ",
+    // 32
+    "
+-- Catch-ups (see docs/streak-saves.md): a daily a player missed, solved a day or two late with a
+-- streak save. Unranked, it only counts for the streaks, once finished. In a table of its own:
+-- what reads attempts as ranked can't take one for a ranked time. finished_at NULL while playing
+CREATE TABLE IF NOT EXISTS catch_ups (
+    user_id     INTEGER NOT NULL,
+    day         INTEGER NOT NULL,
+    started_at  INTEGER NOT NULL,
+    finished_at INTEGER,
+    time_ms     INTEGER,
+    PRIMARY KEY (user_id, day)
+);
+",
 ];
 
 pub async fn init() -> Result<(), String> {

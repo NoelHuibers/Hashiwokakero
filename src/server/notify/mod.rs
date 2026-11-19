@@ -751,21 +751,83 @@ pub async fn flush_shared(conn: &Connection, now: i64) -> Result<u64, ServerFnEr
     Ok(queued)
 }
 
-/// SQL: whether the player `p.user_id` can still get the last call of the day `?1` (its key `?2`):
-/// a streak (yesterday's daily solved and ranked), today's daily not done (solved or the solution
-/// shown) and none queued for it yet.
-const LAST_CALL_OPEN: &str = "EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id
-        AND a.day = ?1 - 1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL)
-    AND NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id AND a.day = ?1
+/// SQL: whether the player `p.user_id` can still get the last call of the day `?1` (its key
+/// `?2`): today's daily not done (solved or the solution shown) and none queued for it yet.
+/// Whether they have a streak to keep is [`streak_open`]'s.
+const LAST_CALL_DUE: &str =
+    "NOT EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id AND a.day = ?1
         AND (a.finished_at IS NOT NULL OR a.revealed != 0))
     AND NOT EXISTS (SELECT 1 FROM notification_outbox o WHERE o.user_id = p.user_id
         AND o.kind = 'last_call' AND o.collapse_key = ?2)";
 
+/// SQL: whether the player `p.user_id` has a day that counts for the streak (ranked, or caught
+/// up from `saves_from` on) in `?1 - back ..= ?1 - 1`.
+fn counted_within(back: i64, saves_from: Option<i64>) -> String {
+    let ranked = format!(
+        "EXISTS (SELECT 1 FROM attempts a WHERE a.user_id = p.user_id
+            AND a.day BETWEEN ?1 - {back} AND ?1 - 1 AND a.finished_at IS NOT NULL AND a.revealed = 0 AND a.flag IS NULL)"
+    );
+    // Numbers, nothing to escape
+    saves_from.map_or_else(
+        || ranked.clone(),
+        |from| {
+            format!(
+                "({ranked} OR EXISTS (SELECT 1 FROM catch_ups c WHERE c.user_id = p.user_id
+                    AND c.day BETWEEN ?1 - {back} AND ?1 - 1 AND c.day >= {from} AND c.finished_at IS NOT NULL))"
+            )
+        },
+    )
+}
+
+/// How many days back the last day that counts can be for a streak to be open: yesterday, or
+/// before an open gap of at most `CATCH_UP_DAYS` (with saves).
+fn lookback(saves_from: Option<i64>) -> i64 {
+    1 + saves_from.map_or(0, |_| crate::model::CATCH_UP_DAYS)
+}
+
+/// SQL: the columns [`streak_open`] needs of the player `p.user_id` on the day `?1`: whether
+/// yesterday counts, and whether a day within the [`lookback`] does.
+fn streak_columns(saves_from: Option<i64>) -> String {
+    format!(
+        "{}, {}",
+        counted_within(1, saves_from),
+        counted_within(lookback(saves_from), saves_from)
+    )
+}
+
+/// Of the players with the [`streak_columns`] `(user, yesterday, recent)`, those whose streak is
+/// open on `day` while today's daily isn't done: yesterday counts, or an open gap follows the
+/// streak (see `model::streak_state`, which only those need).
+async fn streak_open(
+    conn: &Connection,
+    players: &[(i64, bool, bool)],
+    day: i64,
+    saves_from: Option<i64>,
+) -> Result<Vec<i64>, ServerFnError> {
+    let gaps: Vec<i64> = players
+        .iter()
+        .filter(|&&(_, yesterday, recent)| !yesterday && recent)
+        .map(|p| p.0)
+        .collect();
+    let states = if gaps.is_empty() || saves_from.is_none() {
+        std::collections::HashMap::new()
+    } else {
+        super::daily::streak::states(conn, &gaps, day, saves_from).await?
+    };
+    Ok(players
+        .iter()
+        .filter(|&&(user, yesterday, _)| {
+            yesterday || states.get(&user).is_some_and(|s| s.current > 0)
+        })
+        .map(|p| p.0)
+        .collect())
+}
+
 /// Queues the last calls that are due.
 ///
-/// For the players who want them, with a streak (yesterday's daily solved and ranked) and today's
-/// daily not done yet, once [`timing::last_call_at`] came in their time zone. Once per player and
-/// daily.
+/// For the players who want them, with a streak to keep (yesterday's daily solved and ranked or
+/// caught up, or an open gap after the streak, see [`streak_open`]) and today's daily not done
+/// yet, once [`timing::last_call_at`] came in their time zone. Once per player and daily.
 pub async fn queue_last_calls(conn: &Connection, now: i64) -> Result<u64, ServerFnError> {
     queue_last_calls_of(conn, None, now).await
 }
@@ -781,13 +843,16 @@ async fn queue_last_calls_of(
     if now >= change - LAST_CALL_UNTIL_MS {
         return Ok(0);
     }
+    let saves_from = super::daily::streak::saves_from();
     let mut rows = conn
         .query(
             &format!(
-                "SELECT p.user_id, p.time_zone FROM notification_prefs p
+                "SELECT p.user_id, p.time_zone, {yesterday} FROM notification_prefs p
                  WHERE p.enabled = 1 AND p.last_call = 1 AND (?3 IS NULL OR p.user_id = ?3)
                    AND EXISTS (SELECT 1 FROM notification_devices d WHERE d.user_id = p.user_id)
-                   AND {LAST_CALL_OPEN}"
+                   AND {LAST_CALL_DUE} AND {recent}",
+                yesterday = counted_within(1, saves_from),
+                recent = counted_within(lookback(saves_from), saves_from),
             ),
             params![day, day.to_string(), only],
         )
@@ -798,9 +863,11 @@ async fn queue_last_calls_of(
         let user: i64 = row.get(0).map_err(db_err)?;
         let zone: Option<String> = row.get(1).map_err(db_err)?;
         if now >= timing::last_call_at(day, zone.as_deref()) {
-            due.push(user);
+            due.push((user, row.get::<i64>(2).map_err(db_err)? != 0, true));
         }
     }
+    drop(rows);
+    let due = streak_open(conn, &due, day, saves_from).await?;
     if due.is_empty() {
         return Ok(0);
     }
@@ -828,11 +895,13 @@ pub async fn next_last_call(
     now: i64,
 ) -> Result<Option<i64>, ServerFnError> {
     let day = day_of(now);
+    let saves_from = super::daily::streak::saves_from();
     let mut rows = conn
         .query(
             &format!(
-                "SELECT p.time_zone, {LAST_CALL_OPEN} FROM notification_prefs p
-                 WHERE p.user_id = ?3 AND p.enabled = 1 AND p.last_call = 1"
+                "SELECT p.time_zone, {LAST_CALL_DUE}, {columns} FROM notification_prefs p
+                 WHERE p.user_id = ?3 AND p.enabled = 1 AND p.last_call = 1",
+                columns = streak_columns(saves_from),
             ),
             params![day, day.to_string(), user],
         )
@@ -842,7 +911,17 @@ pub async fn next_last_call(
         return Ok(None);
     };
     let zone: Option<String> = row.get(0).map_err(db_err)?;
-    let open = row.get::<i64>(1).map_err(db_err)? != 0;
+    let due = row.get::<i64>(1).map_err(db_err)? != 0;
+    let streak = (
+        user,
+        row.get::<i64>(2).map_err(db_err)? != 0,
+        row.get::<i64>(3).map_err(db_err)? != 0,
+    );
+    drop(rows);
+    let open = due
+        && !streak_open(conn, &[streak], day, saves_from)
+            .await?
+            .is_empty();
     let today = timing::last_call_at(day, zone.as_deref());
     // Past today's moment, its last call is queued (by the job or the poll) or not to come
     Ok(Some(if open && now < today {

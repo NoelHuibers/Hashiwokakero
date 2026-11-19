@@ -1,4 +1,5 @@
-//! Dates: day numbers, the calendar, weekdays, the daily of a day, durations and streaks.
+//! Dates: day numbers, the calendar, weekdays, the daily of a day, durations, and streaks with
+//! their saves.
 //!
 //! Days are counted in UTC since 1970-01-01, the daily puzzle changes at midnight UTC for
 //! everyone.
@@ -124,19 +125,122 @@ pub fn format_duration(ms: i64) -> String {
     }
 }
 
-/// Current streak (ending today or yesterday) and best streak from sorted solved days.
-pub fn streaks(solved_days: &[i64], today: i64) -> (i64, i64) {
-    let (mut best, mut run, mut prev) = (0, 0, None::<i64>);
-    for &day in solved_days {
-        run = if prev == Some(day - 1) { run + 1 } else { 1 };
+/// The first day whose dailies earn streak saves, `None` while saves are off: then nobody has
+/// saves, no gap stays open and caught-up days don't count, streaks are as before. See
+/// `docs/streak-saves.md`.
+pub const SAVES_FROM: Option<i64> = None;
+/// Every this many days in a row earn a save.
+pub const SAVE_EVERY: i64 = 7;
+/// The most saves held at once.
+pub const MAX_SAVES: i64 = 2;
+/// How many days back a missed daily can still be caught up: the open gap lies in
+/// `today - CATCH_UP_DAYS ..= today - 1`.
+pub const CATCH_UP_DAYS: i64 = 2;
+
+/// A player's streaks and saves, see [`streak_state`].
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct StreakState {
+    /// The streak that is still going: ending today or yesterday, or before the open gap.
+    pub current: i64,
+    /// The longest run of counted days. Only gapless runs: while a gap is open, `current` can be
+    /// up to [`CATCH_UP_DAYS`] more.
+    pub best: i64,
+    /// Saves held now, `0..=MAX_SAVES`.
+    pub saves: i64,
+    /// The open gap, oldest first: the missed days that can still be caught up. Empty without one.
+    pub missed: Vec<i64>,
+}
+
+/// The streaks and saves of a player, from the days that count.
+///
+/// Those are `ranked` (a ranked finish) and `caught_up` (a finished catch-up, only from
+/// `saves_from` on). `blocked` are the days with a revealed or flagged run, which can't be caught
+/// up. Unsorted input is fine; a day both ranked and caught up counts once, as ranked.
+///
+/// Walking the counted days in order, a day right after the previous one extends the run, any
+/// other starts a new one. From `saves_from` on, every [`SAVE_EVERY`]th day of a run (counted
+/// from `saves_from` or the run's start, whichever is later) earns a save, at most
+/// [`MAX_SAVES`], and a caught-up day spends one. Saves carry over when a run ends.
+///
+/// The open gap is the latest run of missed days before today (today is never missed before it
+/// ends). It stays open if all its days lie in the last [`CATCH_UP_DAYS`] days, none of them is
+/// blocked, and it isn't longer than the saves held; the current streak is then the run before
+/// it plus the counted days after it. A gap that isn't open breaks the run.
+///
+/// With `saves_from` `None` the current streak ends today or yesterday and `best` is the longest
+/// run of ranked days, as always.
+pub fn streak_state(
+    ranked: &[i64],
+    caught_up: &[i64],
+    blocked: &[i64],
+    today: i64,
+    saves_from: Option<i64>,
+) -> StreakState {
+    use std::collections::BTreeMap;
+
+    // day -> caught up
+    let mut days: BTreeMap<i64, bool> = ranked.iter().map(|&d| (d, false)).collect();
+    if let Some(from) = saves_from {
+        for &day in caught_up.iter().filter(|&&d| d >= from) {
+            days.entry(day).or_insert(true);
+        }
+    }
+
+    let (mut best, mut run, mut start, mut prev, mut saves) = (0, 0, 0, None::<i64>, 0);
+    for (&day, &caught) in &days {
+        if prev == Some(day - 1) {
+            run += 1;
+        } else {
+            run = 1;
+            start = day;
+        }
         best = best.max(run);
+        if let Some(from) = saves_from.filter(|&from| day >= from) {
+            if caught {
+                saves = (saves - 1).max(0);
+            }
+            if (day - start.max(from) + 1) % SAVE_EVERY == 0 {
+                saves = (saves + 1).min(MAX_SAVES);
+            }
+        }
         prev = Some(day);
     }
-    let current = match prev {
-        Some(last) if last >= today - 1 => run,
-        _ => 0,
+    let mut state = StreakState {
+        current: match prev {
+            Some(last) if last >= today - 1 => run,
+            _ => 0,
+        },
+        best,
+        saves,
+        missed: Vec::new(),
     };
-    (current, best)
+    if saves_from.is_none() {
+        return state;
+    }
+
+    let counted = |day: i64| days.contains_key(&day);
+    // The latest missed day before today, and the counted day before it
+    let mut gap_end = today - 1;
+    while counted(gap_end) {
+        gap_end -= 1;
+    }
+    let Some((&before, _)) = days.range(..gap_end).next_back() else {
+        return state;
+    };
+    let gap = before + 1..=gap_end;
+    let open = *gap.start() >= today - CATCH_UP_DAYS
+        && gap_end - before <= saves
+        && !blocked.iter().any(|d| gap.contains(d));
+    if open {
+        let mut first = before;
+        while counted(first - 1) {
+            first -= 1;
+        }
+        let after = today - 1 - gap_end + i64::from(counted(today));
+        state.current = before - first + 1 + after;
+        state.missed = gap.collect();
+    }
+    state
 }
 
 #[cfg(test)]
@@ -171,6 +275,13 @@ mod tests {
         assert_eq!(daily_number(LAUNCH_DAY), 1);
     }
 
+    /// `(current, best)` without saves, as `streaks()` used to be.
+    fn streaks(days: &[i64], today: i64) -> (i64, i64) {
+        let s = streak_state(days, &[], &[], today, None);
+        assert_eq!((s.saves, s.missed.len()), (0, 0));
+        (s.current, s.best)
+    }
+
     #[test]
     fn streak_counting() {
         assert_eq!(streaks(&[], 10), (0, 0));
@@ -178,6 +289,280 @@ mod tests {
         assert_eq!(streaks(&[8, 9], 10), (2, 2));
         assert_eq!(streaks(&[7, 8], 10), (0, 2));
         assert_eq!(streaks(&[1, 2, 3, 4, 9, 10], 10), (2, 4));
+    }
+
+    /// Saves from day 100 on.
+    const FROM: Option<i64> = Some(100);
+
+    fn days(range: std::ops::RangeInclusive<i64>) -> Vec<i64> {
+        range.collect()
+    }
+
+    fn state(ranked: &[i64], caught_up: &[i64], blocked: &[i64], today: i64) -> StreakState {
+        streak_state(ranked, caught_up, blocked, today, FROM)
+    }
+
+    #[test]
+    fn without_saves_nothing_else_counts() {
+        // A caught-up day and a missed one: as if saves didn't exist
+        let ranked = [days(100..=106), vec![108]].concat();
+        let s = streak_state(&ranked, &[107], &[], 109, None);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 1,
+                best: 7,
+                saves: 0,
+                missed: vec![]
+            }
+        );
+        let s = streak_state(&days(100..=120), &[], &[], 122, None);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 0,
+                best: 21,
+                saves: 0,
+                missed: vec![]
+            }
+        );
+    }
+
+    #[test]
+    fn every_7th_day_in_a_row_earns_a_save_up_to_2() {
+        assert_eq!(state(&days(100..=105), &[], &[], 106).saves, 0);
+        assert_eq!(state(&days(100..=106), &[], &[], 107).saves, 1);
+        assert_eq!(state(&days(100..=112), &[], &[], 113).saves, 1);
+        assert_eq!(state(&days(100..=113), &[], &[], 114).saves, 2);
+        assert_eq!(state(&days(100..=130), &[], &[], 131).saves, 2);
+        // Today counts as soon as it's solved
+        assert_eq!(state(&days(100..=106), &[], &[], 106).saves, 1);
+        // Two runs of 6 earn nothing
+        let ranked = [days(100..=105), days(107..=112)].concat();
+        assert_eq!(state(&ranked, &[], &[], 113).saves, 0);
+    }
+
+    #[test]
+    fn the_count_starts_at_saves_from() {
+        // 17 days in a row, 7 of them from day 100 on
+        let s = state(&days(90..=106), &[], &[], 107);
+        assert_eq!((s.current, s.best, s.saves), (17, 17, 1));
+        assert_eq!(state(&days(90..=105), &[], &[], 106).saves, 0);
+        // Nothing before
+        assert_eq!(state(&days(70..=99), &[], &[], 100).saves, 0);
+        // A run that starts later counts from its start
+        assert_eq!(state(&days(103..=108), &[], &[], 109).saves, 0);
+        assert_eq!(state(&days(103..=109), &[], &[], 110).saves, 1);
+    }
+
+    #[test]
+    fn a_caught_up_day_spends_a_save_and_counts() {
+        // 7 days earn a save, day 107 caught up spends it and counts +1
+        let ranked = [days(100..=106), vec![108]].concat();
+        let s = state(&ranked, &[107], &[], 109);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 9,
+                best: 9,
+                saves: 0,
+                missed: vec![]
+            }
+        );
+        // A day both ranked and caught up (a guest merged in) counts once, as ranked
+        let s = state(&days(100..=108), &[107], &[], 109);
+        assert_eq!((s.current, s.saves), (9, 1));
+        // Caught-up days before saves start don't count
+        let s = state(&[98, 100], &[99], &[], 101);
+        assert_eq!((s.current, s.best), (1, 1));
+    }
+
+    #[test]
+    fn caught_up_days_count_toward_earning() {
+        // A save from the first run, the second run's 7th day is caught up: spends and earns
+        let ranked = [days(100..=106), days(110..=115), vec![117]].concat();
+        let s = state(&ranked, &[116], &[], 118);
+        assert_eq!((s.current, s.best, s.saves), (8, 8, 1));
+        // Its 14th day is one too
+        let ranked = [days(100..=106), days(110..=122)].concat();
+        let s = state(&ranked, &[123], &[], 124);
+        assert_eq!((s.current, s.saves), (14, 2));
+    }
+
+    #[test]
+    fn saves_carry_over_a_broken_run() {
+        let ranked = [days(100..=106), days(120..=121)].concat();
+        let s = state(&ranked, &[], &[], 122);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 2,
+                best: 7,
+                saves: 1,
+                missed: vec![]
+            }
+        );
+        // And are spent in the next one
+        let ranked = [days(100..=106), vec![120, 122]].concat();
+        let s = state(&ranked, &[121], &[], 123);
+        assert_eq!((s.current, s.saves), (3, 0));
+    }
+
+    #[test]
+    fn a_one_day_gap_stays_open_with_a_save() {
+        let ranked = days(100..=106);
+        // Yesterday missed, today not done yet
+        let s = state(&ranked, &[], &[], 108);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 7,
+                best: 7,
+                saves: 1,
+                missed: vec![107]
+            }
+        );
+        // Today done
+        let s = state(&[ranked.clone(), vec![108]].concat(), &[], &[], 108);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 8,
+                best: 7,
+                saves: 1,
+                missed: vec![107]
+            }
+        );
+        // The day before yesterday missed, yesterday and today done
+        let s = state(&[ranked, vec![108, 109]].concat(), &[], &[], 109);
+        assert_eq!((s.current, s.missed), (9, vec![107]));
+        // Without a save it breaks
+        let s = state(&days(100..=105), &[], &[], 107);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 0,
+                best: 6,
+                saves: 0,
+                missed: vec![]
+            }
+        );
+        let s = state(&[days(100..=105), vec![107]].concat(), &[], &[], 107);
+        assert_eq!((s.current, s.missed), (1, vec![]));
+    }
+
+    #[test]
+    fn a_two_day_gap_needs_two_saves() {
+        let s = state(&days(100..=113), &[], &[], 116);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 14,
+                best: 14,
+                saves: 2,
+                missed: vec![114, 115]
+            }
+        );
+        let s = state(&[days(100..=113), vec![116]].concat(), &[], &[], 116);
+        assert_eq!((s.current, s.missed), (15, vec![114, 115]));
+        // One save isn't enough
+        let s = state(&days(100..=112), &[], &[], 115);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 0,
+                best: 13,
+                saves: 1,
+                missed: vec![]
+            }
+        );
+        // Catching up the first spends a save and leaves the second open
+        let s = state(&days(100..=113), &[114], &[], 116);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 15,
+                best: 15,
+                saves: 1,
+                missed: vec![115]
+            }
+        );
+    }
+
+    #[test]
+    fn a_gap_too_long_or_too_old_breaks_the_run() {
+        // Three days missed
+        let s = state(&days(100..=113), &[], &[], 117);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 0,
+                best: 14,
+                saves: 2,
+                missed: vec![]
+            }
+        );
+        // One day missed, but three days ago
+        let ranked = [days(100..=113), vec![115, 116]].concat();
+        let s = state(&ranked, &[], &[], 117);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 2,
+                best: 14,
+                saves: 2,
+                missed: vec![]
+            }
+        );
+        // Today done: still the same gap, still too old
+        let s = state(&[ranked, vec![117]].concat(), &[], &[], 117);
+        assert_eq!((s.current, s.missed), (3, vec![]));
+        // Nothing before the gap: no streak to keep
+        let s = state(&[], &[], &[], 117);
+        assert_eq!(s, StreakState::default());
+    }
+
+    #[test]
+    fn a_revealed_or_flagged_day_cant_be_caught_up() {
+        let s = state(&days(100..=106), &[], &[107], 108);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 0,
+                best: 7,
+                saves: 1,
+                missed: vec![]
+            }
+        );
+        let s = state(&days(100..=113), &[], &[115], 116);
+        assert_eq!((s.current, s.missed), (0, vec![]));
+        // A blocked day elsewhere doesn't matter
+        let s = state(&days(100..=106), &[], &[90, 108], 108);
+        assert_eq!((s.current, s.missed), (7, vec![107]));
+    }
+
+    #[test]
+    fn today_is_never_missed() {
+        let s = state(&days(100..=106), &[], &[], 107);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 7,
+                best: 7,
+                saves: 1,
+                missed: vec![]
+            }
+        );
+        let s = state(&days(100..=105), &[], &[], 106);
+        assert_eq!(
+            s,
+            StreakState {
+                current: 6,
+                best: 6,
+                saves: 0,
+                missed: vec![]
+            }
+        );
     }
 
     #[test]

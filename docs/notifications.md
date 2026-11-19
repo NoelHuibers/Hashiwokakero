@@ -4,7 +4,7 @@ Hashi tells players about five things, each with its own switch:
 
 | Kind (`NotifyKind`) | When | Tap opens |
 | --- | --- | --- |
-| `last_call` | The player has a streak (yesterday's daily solved and ranked) and today's daily isn't done, about three hours before the daily changes, in their own time zone | `/` |
+| `last_call` | The player's streak is open (yesterday's daily solved and ranked or caught up, or a missed day after the streak that can still be caught up, see [streak saves](streak-saves.md)) and today's daily isn't done, about three hours before the daily changes, in their own time zone | `/` |
 | `race` | Someone opens a race in one of the player's groups (not for rematches) | `/groups/<g>/races/<id>` |
 | `rival` | A rival finishes today's daily faster than the player did (ranked results only) | `/` |
 | `shared` | Players solve a puzzle the player shared, counted (`New solvers: 3`) | `/p/<code>` |
