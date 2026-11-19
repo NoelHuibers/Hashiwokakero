@@ -321,11 +321,25 @@ test('a notification shows while the app is in front, and a tap opens its page',
 test('a tap on a notification starts the app on its page', async ({ app, udid }) => {
   // SpringBoard's lookups and, below, a start of the app
   test.slow();
-  await app.session.mobile('terminateApp', { bundleId: BUNDLE });
-  await pushAndTap(app, udid, 'closed');
-  await expect
-    .poll(() => inFront(app.session), { message: 'the app started by the tap' })
-    .toBe(BUNDLE);
-  await pageAgain(app);
+  // A start whose page doesn't come within a minute is tapped once more, as `launch`
+  // (e2e/ios/app.ts) starts the app once more: on a busy runner a start's WKWebView didn't show in
+  // the WebKit inspector for a minute
+  for (let round = 1; ; round++) {
+    await app.session.mobile('terminateApp', { bundleId: BUNDLE });
+    await pushAndTap(app, udid, `closed ${round}`);
+    await expect
+      .poll(() => inFront(app.session), { message: 'the app started by the tap' })
+      .toBe(BUNDLE);
+    try {
+      await pageAgain(app);
+      break;
+    } catch (e) {
+      if (round === 2) throw e;
+      test.info().annotations.push({
+        type: 'tapped again',
+        description: String(e).split('\n')[0]!,
+      });
+    }
+  }
   await expect.poll(() => app.url()).toBe(`${ORIGIN}/groups`);
 });

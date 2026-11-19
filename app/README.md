@@ -1524,7 +1524,9 @@ the sandbox or says why there is none (noted in the report: an unsigned build ha
 with our payload shows as a banner over the app in front, and a tap on it opens its `url`'s page
 (`/groups`) in the app, also when the tap starts the closed app. A banner shows for about five
 seconds and a busy runner's lookups and clicks in SpringBoard take seconds each: a notification
-whose banner went is tapped in the Notification Centre (the report says which). The screenshots `start.png`, `play.png`,
+whose banner went is tapped in the Notification Centre (the report says which). A start by a tap
+whose page doesn't show in the inspector within a minute gets a second notification and tap, as a
+launch gets a second start. The screenshots `start.png`, `play.png`,
 `play-light.png`, `play-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file), `game-center.png` and
 `notification-tapped.png` are the
