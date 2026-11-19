@@ -22,16 +22,60 @@ const LINK = 'https://hashi.rs/groups';
 
 test.describe.configure({ mode: 'serial' });
 
+/** A plugin command's answer, or its refusal. */
+type Outcome = { answer: unknown } | { refused: string };
+/** The outcomes of the commands `start` sent, in the page. */
+type Outcomes = { e2eOutcomes?: Record<number, Outcome>; e2eSent?: number };
+
+/**
+ * Sends a plugin command of the app in the page and returns at once, with the number to find its
+ * outcome by (`outcome`). The script doesn't wait for the command: while a script of the page runs
+ * for more than a second, Appium's XCUITest driver asks WebDriverAgent for an alert twice a second,
+ * and every ask reads the app's accessibility tree. On iOS 27's simulator that kept the app busy
+ * (Apple Intelligence's checks in the app) and the first `notify_state` took 73 s to over 120 s;
+ * an alert that shows meanwhile fails the script ("unexpected alert open").
+ */
+const start = (app: App, command: string) =>
+  app.evaluate((command) => {
+    const w = window as unknown as Outcomes;
+    w.e2eOutcomes ??= {};
+    w.e2eSent = (w.e2eSent ?? 0) + 1;
+    const outcomes = w.e2eOutcomes;
+    const id = w.e2eSent;
+    (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, {}).then(
+      (answer: unknown) => {
+        outcomes[id] = { answer: answer ?? null };
+      },
+      (e: unknown) => {
+        outcomes[id] = { refused: typeof e === 'string' ? e : JSON.stringify(e) };
+      },
+    );
+    return id;
+  }, command);
+
+/** The outcome of the command `start` sent as `id`, once there is one. */
+async function outcome(app: App, id: number, command: string, timeout = 45_000) {
+  const started = Date.now();
+  let found: Outcome | null = null;
+  await expect
+    .poll(
+      async () => {
+        found = await app.evaluate(
+          (id) => (window as unknown as Outcomes).e2eOutcomes?.[id] ?? null,
+          id,
+        );
+        return found;
+      },
+      { message: `the answer to ${command}`, timeout },
+    )
+    .not.toBeNull();
+  test.info().annotations.push({ type: command, description: `${Date.now() - started} ms` });
+  return found as unknown as Outcome;
+}
+
 /** A plugin command of the app, with its answer or its refusal. */
-const invoke = (app: App, command: string) =>
-  app.evaluate(
-    (command) =>
-      (window as TauriWindow).__TAURI_INTERNALS__.invoke(command, {}).then(
-        (answer: unknown) => ({ answer: answer ?? null }),
-        (e: unknown) => ({ refused: typeof e === 'string' ? e : JSON.stringify(e) }),
-      ),
-    command,
-  );
+const invoke = async (app: App, command: string, timeout?: number) =>
+  outcome(app, await start(app, command), command, timeout);
 
 /** Runs `fn` with the native views of SpringBoard as the root of the lookups, then the page again. */
 async function onSpringBoard<T>(session: Session, fn: () => Promise<T>): Promise<T> {
@@ -96,36 +140,74 @@ async function push(udid: string, marker: string, url = LINK) {
   }
 }
 
+/** Clicks the first native element with `marker` in its label; `false` without one, or when it went. */
+async function tapLabelled(session: Session, marker: string) {
+  const found = await element(session, `label CONTAINS ${JSON.stringify(marker)}`);
+  if (!found) return false;
+  try {
+    await session.command('POST', `/element/${found}/click`);
+    return true;
+  } catch (e) {
+    // A banner that went between the lookup and the click
+    if (e instanceof WebDriverError && e.error === 'stale element reference') return false;
+    throw e;
+  }
+}
+
 /**
- * Taps the banner of the notification with `marker` while it shows (about five seconds, in the
- * Notification Centre's list after that). A lookup in SpringBoard takes a snapshot of its views,
- * seconds on a busy runner: the search is bounded by time, not by tries. How long it took goes
- * into the report.
+ * Sends a notification with `marker` (`push`) and taps it: its banner while it shows (about five
+ * seconds), else its entry in the Notification Centre, where it stays. A lookup in SpringBoard
+ * takes a snapshot of its views, seconds on a busy runner, and so does a click on what it found,
+ * and `simctl push` took 24 s once: the banner may be gone before the tap. The search starts with
+ * the push; how the notification was tapped and when goes into the report.
  */
-async function tapBanner(app: App, marker: string) {
+async function pushAndTap(app: App, udid: string, marker: string) {
   const started = Date.now();
-  const tapped = await onSpringBoard(app.session, async () => {
-    while (Date.now() - started < 45_000) {
-      const banner = await element(app.session, `label CONTAINS ${JSON.stringify(marker)}`);
-      if (banner) {
-        await app.session.command('POST', `/element/${banner}/click`);
-        return true;
-      }
+  const pushed: { at?: number } = {};
+  const sending = push(udid, marker).finally(() => {
+    pushed.at = Date.now();
+  });
+  sending.catch(() => {
+    // Thrown by the `await` below; a failed push ends the banner's search like a finished one
+  });
+  const how = await onSpringBoard(app.session, async () => {
+    while (pushed.at === undefined || Date.now() - pushed.at < 15_000) {
+      if (await tapLabelled(app.session, marker)) return 'banner';
       await sleep(250);
     }
-    return false;
+    await sending;
+    // The Notification Centre: a swipe down from the top left corner (the right one opens the
+    // Control Centre)
+    const screen = await app.session.command<{ width: number; height: number }>(
+      'GET',
+      '/window/rect',
+    );
+    await app.session.mobile('dragFromToForDuration', {
+      duration: 0.5,
+      fromX: screen.width * 0.2,
+      fromY: 2,
+      toX: screen.width * 0.2,
+      toY: screen.height * 0.6,
+    });
+    const shown = Date.now();
+    while (Date.now() - shown < 30_000) {
+      if (await tapLabelled(app.session, marker)) return 'Notification Centre';
+      await sleep(500);
+    }
+    return null;
   });
+  await sending;
   test.info().annotations.push({
-    type: 'banner',
-    description: `${tapped ? 'tapped' : 'not found'} after ${Date.now() - started} ms`,
+    type: 'notification',
+    description: `${how ? `tapped in the ${how}` : 'not found'} after ${Date.now() - started} ms (pushed after ${pushed.at! - started} ms)`,
   });
-  if (!tapped) {
+  if (!how) {
     await test.info().attach('springboard', {
       body: await springBoardSource(app.session),
       contentType: 'text/xml',
     });
   }
-  expect(tapped, `the banner of ${marker}`).toBe(true);
+  expect(how, `the notification ${marker}`).not.toBeNull();
 }
 
 /** The page of the app in the WebKit inspector after a new start, selected. */
@@ -148,47 +230,60 @@ async function pageAgain(app: App) {
   await app.hydrated();
 }
 
+/** The Allow button of iOS's notification alert, if it shows. */
+const allowButton = (session: Session) =>
+  element(session, "type == 'XCUIElementTypeButton' AND label == 'Allow'");
+
+// A try that failed with iOS's alert still open: answered, so that the app's end doesn't answer it.
+// iOS takes an app that ends while it asks as a no, and its retry would find notifications refused.
+test.afterEach(async ({ app }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  await onSpringBoard(app.session, async () => {
+    const allow = await allowButton(app.session);
+    if (allow) await app.session.command('POST', `/element/${allow}/click`);
+  }).catch(() => {
+    // Nothing to answer, or the app is gone already
+  });
+});
+
 test("iOS asks once, and the plugin gives the push service's token", async ({ app }) => {
-  // Not yet asked: not allowed (a retry finds the first try's answer: iOS keeps it, not the app)
-  const before = await invoke(app, 'plugin:hashi|notify_state');
+  // The first question after the install may still take a while (see `start`)
+  test.slow();
+  // Not yet asked: not allowed. iOS keeps the answer, not the app: a retry finds the first try's
+  // (see `afterEach`).
+  const before = await invoke(app, 'plugin:hashi|notify_state', 180_000);
   if (test.info().retry === 0) expect(before).toEqual({ answer: { granted: false } });
-  // The page's tap: iOS's alert, which waits for the player
-  await app.evaluate(() => {
-    Object.assign(window, {
-      e2ePermission: (window as TauriWindow).__TAURI_INTERNALS__
-        .invoke('plugin:hashi|notify_permission', {})
-        .then(
-          (answer: unknown) => ({ answer }),
-          (e: unknown) => ({ refused: String(e) }),
-        ),
-    });
-    return null;
-  });
-  const allowed = await onSpringBoard(app.session, async () => {
-    for (let i = 0; i < 40; i++) {
-      const allow = await element(
-        app.session,
-        "type == 'XCUIElementTypeButton' AND label == 'Allow'",
-      );
-      if (allow) {
-        await app.session.command('POST', `/element/${allow}/click`);
-        return true;
+  // The page's tap: iOS's alert, which waits for the player (not on a retry after an Allow). Nothing
+  // runs in the page until it is answered: a script that runs while an alert shows fails
+  // ("unexpected alert open").
+  const permission = await start(app, 'plugin:hashi|notify_permission');
+  if (!('answer' in before && (before.answer as { granted: boolean }).granted)) {
+    const started = Date.now();
+    const allowed = await onSpringBoard(app.session, async () => {
+      while (Date.now() - started < 60_000) {
+        const allow = await allowButton(app.session);
+        if (allow) {
+          await app.session.command('POST', `/element/${allow}/click`);
+          return true;
+        }
+        await sleep(250);
       }
-      await sleep(250);
-    }
-    return false;
-  });
-  if (!allowed)
-    await test.info().attach('springboard', {
-      body: await springBoardSource(app.session),
-      contentType: 'text/xml',
+      return false;
     });
-  expect(allowed || test.info().retry > 0, "iOS's alert with Allow").toBe(true);
-  await expect
-    .poll(() =>
-      app.evaluate(() => (window as unknown as { e2ePermission?: unknown }).e2ePermission),
-    )
-    .toEqual({ answer: { granted: true } });
+    test.info().annotations.push({
+      type: 'alert',
+      description: `${allowed ? 'allowed' : 'not found'} after ${Date.now() - started} ms`,
+    });
+    if (!allowed)
+      await test.info().attach('springboard', {
+        body: await springBoardSource(app.session),
+        contentType: 'text/xml',
+      });
+    expect(allowed, "iOS's alert with Allow").toBe(true);
+  }
+  expect(await outcome(app, permission, 'plugin:hashi|notify_permission')).toEqual({
+    answer: { granted: true },
+  });
   expect(await invoke(app, 'plugin:hashi|notify_state')).toEqual({ answer: { granted: true } });
   // Asked again: iOS doesn't ask twice, the answer stays
   expect(await invoke(app, 'plugin:hashi|notify_permission')).toEqual({
@@ -216,8 +311,7 @@ test('a notification shows while the app is in front, and a tap opens its page',
   // SpringBoard's lookups and, below, a start of the app
   test.slow();
   await app.visit('/rules');
-  await push(udid, 'in-front');
-  await tapBanner(app, 'in-front');
+  await pushAndTap(app, udid, 'in-front');
   // The same page, its router on the link's page (api::native::follow_app_links)
   await expect.poll(() => app.url()).toBe(`${ORIGIN}/groups`);
   expect(await inFront(app.session)).toBe(BUNDLE);
@@ -227,12 +321,25 @@ test('a notification shows while the app is in front, and a tap opens its page',
 test('a tap on a notification starts the app on its page', async ({ app, udid }) => {
   // SpringBoard's lookups and, below, a start of the app
   test.slow();
-  await app.session.mobile('terminateApp', { bundleId: BUNDLE });
-  await push(udid, 'closed');
-  await tapBanner(app, 'closed');
-  await expect
-    .poll(() => inFront(app.session), { message: 'the app started by the tap' })
-    .toBe(BUNDLE);
-  await pageAgain(app);
+  // A start whose page doesn't come within a minute is tapped once more, as `launch`
+  // (e2e/ios/app.ts) starts the app once more: on a busy runner a start's WKWebView didn't show in
+  // the WebKit inspector for a minute
+  for (let round = 1; ; round++) {
+    await app.session.mobile('terminateApp', { bundleId: BUNDLE });
+    await pushAndTap(app, udid, `closed ${round}`);
+    await expect
+      .poll(() => inFront(app.session), { message: 'the app started by the tap' })
+      .toBe(BUNDLE);
+    try {
+      await pageAgain(app);
+      break;
+    } catch (e) {
+      if (round === 2) throw e;
+      test.info().annotations.push({
+        type: 'tapped again',
+        description: String(e).split('\n')[0]!,
+      });
+    }
+  }
   await expect.poll(() => app.url()).toBe(`${ORIGIN}/groups`);
 });

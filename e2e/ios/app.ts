@@ -19,7 +19,7 @@ import {
   screenshot,
   WDA,
 } from './device.ts';
-import { NATIVE, Session } from './webdriver.ts';
+import { NATIVE, Session, WebDriverError } from './webdriver.ts';
 
 export { expect };
 
@@ -109,7 +109,7 @@ export class App {
    * Waits for the mark App sets once the WASM rendered the page (src/lib.rs), then keeps what the
    * page does from then on (`records`).
    */
-  async hydrated() {
+  async hydrated(timeout = 60_000) {
     await expect
       .poll(
         () =>
@@ -118,7 +118,7 @@ export class App {
           ),
         {
           message: 'the page hydrated',
-          timeout: 60_000,
+          timeout,
         },
       )
       .toBe(true);
@@ -275,7 +275,7 @@ export const test = base.extend<
   session: [
     async ({ udid }, use) => {
       const d = await device();
-      const session = await Session.create(APPIUM_URL, {
+      const capabilities = {
         platformName: 'iOS',
         'appium:automationName': 'XCUITest',
         'appium:udid': udid,
@@ -297,13 +297,22 @@ export const test = base.extend<
         // writes it into Appium's log, 60 MB of it)
         'appium:showSafariConsoleLog': false,
         ...(WDA ? { 'appium:usePreinstalledWDA': true, 'appium:prebuiltWDAPath': WDA } : {}),
+      };
+      // The first session after the simulator's boot once found WebDriverAgent not started after
+      // 180 s, the next one started it at once: one more try, which the run's log shows
+      const session = await Session.create(APPIUM_URL, capabilities).catch((e: unknown) => {
+        if (!(e instanceof WebDriverError && /Unable to launch WebDriverAgent/.test(e.message)))
+          throw e;
+        console.log(`a second session: ${e.message.split('\n')[0]}`);
+        return Session.create(APPIUM_URL, capabilities);
       });
       await use(session);
       await session.delete().catch(() => {
         // Gone with the simulator already
       });
     },
-    { scope: 'worker', timeout: 480_000 },
+    // Two sessions' worth (`Session.create`)
+    { scope: 'worker', timeout: 960_000 },
   ],
 
   app: async ({ session, udid }, use, testInfo) => {
@@ -361,35 +370,55 @@ export const test = base.extend<
 
 /**
  * Starts the app with its data cleared and waits for its page to hydrate: Appium finds the page
- * in the WebKit inspector once the WKWebView loaded it (`mobile: getContexts`).
+ * in the WebKit inspector once the WKWebView loaded it (`mobile: getContexts`). A start whose page
+ * doesn't come within 50 s is started once more, noted in the report: on a busy runner's simulator
+ * the WKWebView of a start stayed at about:blank, or the page didn't hydrate, for over a minute,
+ * while the next start went as usual (once a run, in about half of the runs).
  */
 async function launch(session: Session, udid: string, testInfo: TestInfo): Promise<App> {
   return test.step('start the app', async () => {
-    await session.setContext(NATIVE);
-    // Ends the app, then empties its data container: local storage, WebKit's caches
-    await session.mobile('clearApp', { bundleId: BUNDLE });
-    const started = Date.now();
-    await session.mobile('launchApp', { bundleId: BUNDLE });
-    let context: string | undefined;
-    await expect
-      .poll(
-        async () => {
-          const contexts = await session.mobile<{ id: string; url?: string; bundleId?: string }[]>(
-            'getContexts',
-            { waitForWebviewMs: 5000 },
-          );
-          context = contexts.find((c) => c.id !== NATIVE && c.url?.startsWith(ORIGIN))?.id;
-          return context ? 'found' : JSON.stringify(contexts);
-        },
-        { message: "the app's page in the WebKit inspector", timeout: 60_000 },
-      )
-      .toBe('found');
-    await session.setContext(context!);
-    const app = new App(session, udid);
-    await app.hydrated();
-    testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
-    return app;
+    const first = Date.now();
+    try {
+      return await start(session, udid, testInfo, 50_000);
+    } catch (e) {
+      testInfo.annotations.push({
+        type: 'relaunch',
+        description: `after ${Date.now() - first} ms: ${String(e).split('\n')[0]}`,
+      });
+      // The second start gets its own time
+      testInfo.setTimeout(testInfo.timeout + 90_000);
+      return start(session, udid, testInfo, 90_000);
+    }
   });
+}
+
+/** One start of the app for `launch`, its page hydrated within `timeout` ms. */
+async function start(session: Session, udid: string, testInfo: TestInfo, timeout: number) {
+  await session.setContext(NATIVE);
+  // Ends the app, then empties its data container: local storage, WebKit's caches
+  await session.mobile('clearApp', { bundleId: BUNDLE });
+  const started = Date.now();
+  const left = () => Math.max(timeout - (Date.now() - started), 1000);
+  await session.mobile('launchApp', { bundleId: BUNDLE });
+  let context: string | undefined;
+  await expect
+    .poll(
+      async () => {
+        const contexts = await session.mobile<{ id: string; url?: string; bundleId?: string }[]>(
+          'getContexts',
+          { waitForWebviewMs: 5000 },
+        );
+        context = contexts.find((c) => c.id !== NATIVE && c.url?.startsWith(ORIGIN))?.id;
+        return context ? 'found' : JSON.stringify(contexts);
+      },
+      { message: "the app's page in the WebKit inspector", timeout: left() },
+    )
+    .toBe('found');
+  await session.setContext(context!);
+  const app = new App(session, udid);
+  await app.hydrated(left());
+  testInfo.annotations.push({ type: 'launch', description: `${Date.now() - started} ms` });
+  return app;
 }
 
 /** The app in front: its bundle ID (`mobile: activeAppInfo`, WebDriverAgent's view). */

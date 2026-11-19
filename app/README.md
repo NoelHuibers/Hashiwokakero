@@ -1487,7 +1487,10 @@ the driver's `mobile:` commands (clear, launch and activate an app, the app in f
 console from the inspector.
 
 Each test clears the app's data and launches it (`mobile: clearApp`, `mobile: launchApp`), selects
-its page once the inspector lists it and waits for it to hydrate. Another page of the app is opened
+its page once the inspector lists it and waits for it to hydrate. A start whose page isn't there
+within 50 s is started once more and the report says so (`relaunch`): on a busy runner's simulator
+a start's WKWebView stayed at about:blank, or its page didn't hydrate, for over a minute, while the
+next start went as usual. Another page of the app is opened
 with WebDriver's navigation, which waits for the load event: a script sent while the document
 changes waits for the next one. WebDriver can't run a script before the page's own like Playwright's
 `addInitScript`: after every page load the test adds listeners for errors and
@@ -1509,12 +1512,21 @@ gives them; the app's own plugin answers `system_bars` and `share` with a file (
 side Tauri refuses them); Game Center's sign-in answers (available, nobody signed in) with nothing
 of GameKit over the page, a report goes through, and the button's command shows the sign-in sheet
 GameKit kept, or is refused without one. Notifications (`notifications.spec.ts`, first: iOS asks
-once per simulator): iOS's alert, allowed through SpringBoard (Appium's `defaultActiveApplication`),
-answers `notify_permission` and `notify_state`; `notify_token` answers a token of the sandbox or
-says why there is none (noted in the report: an unsigned build has no `aps-environment`, a
-runner's simulator may not reach Apple); a notification of `xcrun simctl push` with our payload
-shows as a banner over the app in front, and a tap on it opens its `url`'s page (`/groups`) in the
-app, also when the tap starts the closed app. The screenshots `start.png`, `play.png`,
+once per install): iOS's alert, allowed through SpringBoard (Appium's `defaultActiveApplication`),
+answers `notify_permission` and `notify_state`. The test sends the plugin's commands without waiting
+for them in the script and reads their answers afterwards: while a script runs for more than a
+second, Appium's XCUITest driver keeps asking WebDriverAgent for an alert, which reads the app's
+accessibility tree each time, kept the app busy on iOS 27's simulator (the first `notify_state` took
+73 s to over 120 s) and fails the script once iOS's alert shows. A failed try answers an alert it
+left open (iOS would store the app's end as a no for the retry). `notify_token` answers a token of
+the sandbox or says why there is none (noted in the report: an unsigned build has no
+`aps-environment`, a runner's simulator may not reach Apple); a notification of `xcrun simctl push`
+with our payload shows as a banner over the app in front, and a tap on it opens its `url`'s page
+(`/groups`) in the app, also when the tap starts the closed app. A banner shows for about five
+seconds and a busy runner's lookups and clicks in SpringBoard take seconds each: a notification
+whose banner went is tapped in the Notification Centre (the report says which). A start by a tap
+whose page doesn't show in the inspector within a minute gets a second notification and tap, as a
+launch gets a second start. The screenshots `start.png`, `play.png`,
 `play-light.png`, `play-dark.png` (the page dark on a light phone: the status bar's icons
 light), `landscape.png`, `share.png` (the share sheet with the file), `game-center.png` and
 `notification-tapped.png` are the
@@ -1535,7 +1547,9 @@ in `/etc/hosts`.
 
 In CI, after the build: Appium (`APPIUM_VERSION`, `XCUITEST_VERSION` in the job, installed with npm)
 and the driver's prebuilt WebDriverAgent for simulators (`download-wda --kind sim`; building it with
-Xcode takes minutes), then the tests. A simulator is flaky like an emulator: the config retries a
+Xcode takes minutes), then the tests. The first session after the simulator's boot once found
+WebDriverAgent not started after 180 s: a session that can't start it tries once more. A simulator
+is flaky like an emulator: the config retries a
 failed test once, and the job summary counts the flaky ones next to the device, the times of the
 build, Appium's setup and the tests, and each test's launch time. A failed run also uploads
 `ios-simulator-report`: the Playwright report (with each test's console), Appium's log and the
