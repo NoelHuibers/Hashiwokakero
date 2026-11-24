@@ -1,7 +1,7 @@
 //! Checking a submission before it is compiled: valid WebAssembly without threads, 64-bit or
 //! multiple memories, importing nothing but WASI preview 1, with a `_start` function.
 
-use wasmparser::{Parser, Payload};
+use wasmtime::wasmparser::{self, Parser, Payload};
 
 use crate::Rejection;
 

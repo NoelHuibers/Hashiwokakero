@@ -1391,7 +1391,6 @@ dependencies = [
  "splr",
  "tar",
  "tokio",
- "wasmparser 0.262.0",
  "wasmtime",
  "wasmtime-wasi",
  "wat",
