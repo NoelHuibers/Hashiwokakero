@@ -9,7 +9,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN npm install -g --allow-scripts=pnpm "$(node -p "require('./package.json').packageManager")" \
     && pnpm install --frozen-lockfile --ignore-scripts
 
-FROM rust:1.99-trixie AS builder
+FROM rust:1.100-trixie AS builder
 
 # cargo-binstall makes it easier to install cargo extensions like cargo-leptos
 RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
