@@ -116,7 +116,7 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Ranglisten und Spielerprofil",
         &[
-            "Zu jeder Brücke des Tages speichern wir Start- und Endzeit, deine Zeit, deine Züge, wie oft du Tipps und Prüfungen genutzt hast, und die gelöste Brückenbelegung.",
+            "Zu jeder Brücke des Tages speichern wir Start- und Endzeit, deine Zeit, deine Züge, wie oft du Tipps und Prüfungen genutzt hast, und die gelöste Brückenbelegung. Holst du eine verpasste Brücke des Tages nach, um deine Serie zu halten, speichern wir dazu den Tag, Start- und Endzeit und deine Zeit. Nachgeholte Rätsel haben keinen Platz in der Rangliste und zählen nur für deine Serien; deine Zeit dabei siehst nur du.",
             "Die Brücke des Tages ist ein öffentlicher Wettbewerb. Öffentlich sichtbar sind daher dein Name (Benutzer- oder Gastname) und ob du als Gast spielst, in der Tagesrangliste deine Zeit, Tipps, Prüfungen und dein gewählter Stempel, in der Ruhmeshalle und im Monatsrennen deine gelösten Rätsel, Serien, Medaillen und Punkte, und dein Spielerprofil mit dem Datum, seit dem du spielst, deiner Bilanz, den letzten 35 Tagen mit Zeit und Platz und deinem Stempelheft. Spielerprofile sind für Suchmaschinen gesperrt.",
             "Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzung des Spiels). Wenn du nicht öffentlich erscheinen möchtest, spiel die Rätsel unter „Spielen“.",
         ],
@@ -250,7 +250,7 @@ const PRIVACY_EN: &[Section] = &[
         "Account, leaderboards and player profile",
         &[
             "Starting the Bridge of the Day creates a guest account with a random guest name and the cookie \"hashi_session\", which holds a random key we only store as a hash and expires a year after your last visit or when you log out. Registered accounts add a username and an Argon2 password hash. When you change your username we store the time, as it can only be changed every 30 days. Failed logins are counted in memory for 15 minutes to slow down password guessing.",
-            "For each daily we store your start and finish time, time, moves, hints, checks and solved board. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, stick to the puzzles in Play (Art. 6 (1) b GDPR).",
+            "For each daily we store your start and finish time, time, moves, hints, checks and solved board. When you catch up a daily you missed to keep your streak, we store the day, the start and finish time and your time; a caught-up daily has no place on the leaderboard and only counts for your streaks, and only you see its time. The daily is a public competition: your name, whether you are a guest, your times, hints, checks, medals, streaks, monthly points, your stamps with their dates and your player profile (the last 35 days with time and place) are public. Player profiles are hidden from search engines. If you don't want to appear publicly, stick to the puzzles in Play (Art. 6 (1) b GDPR).",
         ],
     ),
     (

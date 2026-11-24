@@ -10,6 +10,7 @@ use libsql::{Connection, params};
 use common::Puzzle;
 
 use super::fame::champion;
+use super::streak::saves_from;
 use super::{from_json, json, today};
 use crate::model::{
     ApiError, Daypart, MS_PER_DAY, MoveEvent, Record, Solve, Stamp, StampProgress, day_of,
@@ -130,8 +131,27 @@ pub(super) async fn record(
     let (yokozuna_weeks, award_weeks) =
         crate::server::groups::banzuke::honours(conn, user, today()).await?;
 
+    // Caught-up days, for the Streak stamps
+    let saves_from = saves_from();
+    let mut caught_up = Vec::new();
+    if let Some(from) = saves_from {
+        let mut rows = conn
+            .query(
+                "SELECT day FROM catch_ups WHERE user_id = ?1 AND finished_at IS NOT NULL AND day >= ?2
+                 ORDER BY day",
+                params![user, from],
+            )
+            .await
+            .map_err(db_err)?;
+        while let Some(row) = rows.next().await.map_err(db_err)? {
+            caught_up.push(row.get(0).map_err(db_err)?);
+        }
+    }
+
     Ok(Record {
         solves,
+        caught_up,
+        saves_from,
         champion_months,
         players_reached,
         joined,

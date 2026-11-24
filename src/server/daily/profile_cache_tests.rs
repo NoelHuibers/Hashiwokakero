@@ -26,6 +26,7 @@ fn snapshot(solved: i64) -> UserStats {
             day: 42,
             time_ms: Some(1234),
             rank: Some(1),
+            caught_up: false,
         }],
         gold: 1,
         shown: Some(Stamp::First),
