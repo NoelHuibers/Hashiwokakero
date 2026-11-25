@@ -860,7 +860,7 @@ mod tests {
     /// Whether a tap on the only bridge changes the board.
     fn editable(daily: &Daily) -> bool {
         let before = daily.game.bridges.get_untracked();
-        daily.game.cycle(0, -1);
+        daily.game.cycle(0, 1);
         daily.game.bridges.get_untracked() != before
     }
 

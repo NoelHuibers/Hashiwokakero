@@ -304,7 +304,7 @@ impl Game {
         self.wrong.set(vec![]);
     }
 
-    /// Adds (+1) or removes (-1) a bridge, cycling between 0, 1 and 2.
+    /// Adds (+1) or removes (-1) a bridge, see [`step_bridge`]. Removing at 0 is no move.
     pub fn cycle(&self, edge: usize, delta: i8) {
         if !self.is_playing() {
             return;
@@ -312,9 +312,9 @@ impl Game {
         let current = self
             .bridges
             .with_untracked(|b| b.get(edge).copied().unwrap_or(0));
-        let next = (current.cast_signed() + delta)
-            .rem_euclid(3)
-            .cast_unsigned();
+        let Some(next) = step_bridge(current, delta) else {
+            return;
+        };
         self.set_edges(&[(edge, next)]);
         self.moves.update(|m| *m += 1);
         self.hint.set(None);
@@ -439,6 +439,19 @@ impl Game {
 #[derive(Clone, Copy, Debug)]
 pub struct DailyGame(pub Game);
 
+/// The bridge count after a step from `current`: forward (+1) cycles 0, 1, 2, 0; backward (-1)
+/// takes one away and stops at 0 (`None`: nothing to take away).
+pub fn step_bridge(current: u8, delta: i8) -> Option<u8> {
+    if delta < 0 && current == 0 {
+        return None;
+    }
+    Some(
+        (current.cast_signed() + delta)
+            .rem_euclid(3)
+            .cast_unsigned(),
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use common::Difficulty;
@@ -471,6 +484,51 @@ mod tests {
         game
     }
 
+    #[test]
+    fn a_step_forward_cycles_and_a_step_back_stops_at_zero() {
+        assert_eq!(step_bridge(0, 1), Some(1));
+        assert_eq!(step_bridge(1, 1), Some(2));
+        assert_eq!(step_bridge(2, 1), Some(0));
+        assert_eq!(step_bridge(2, -1), Some(1));
+        assert_eq!(step_bridge(1, -1), Some(0));
+        assert_eq!(step_bridge(0, -1), None);
+    }
+
+    /// Taking a bridge away where there is none is no move: the board, the moves, the undo
+    /// history and the hint stay as they were.
+    #[test]
+    fn removing_from_an_empty_gap_does_nothing() {
+        Owner::new().with(|| {
+            let game = playing(2);
+            game.cycle(1, 1);
+            game.hint.set(Some(1));
+            game.cycle(0, -1);
+            assert_eq!(game.bridges.get_untracked(), vec![0, 1]);
+            assert_eq!(game.moves.get_untracked(), 1);
+            assert_eq!(game.undo_stack.with_untracked(Vec::len), 1);
+            assert!(game.hint.with_untracked(Option::is_some));
+
+            // Two, one, none, and there it stays
+            game.cycle(0, 1);
+            game.cycle(0, 1);
+            assert_eq!(game.bridges.get_untracked(), vec![2, 1]);
+            game.cycle(0, -1);
+            assert_eq!(game.bridges.get_untracked(), vec![1, 1]);
+            game.cycle(0, -1);
+            assert_eq!(game.bridges.get_untracked(), vec![0, 1]);
+            game.cycle(0, -1);
+            assert_eq!(game.bridges.get_untracked(), vec![0, 1]);
+            assert_eq!(game.moves.get_untracked(), 5);
+            assert_eq!(game.undo_stack.with_untracked(Vec::len), 5);
+
+            // Forward still goes round: 0, 1, 2, 0
+            for want in [1, 2, 0] {
+                game.cycle(0, 1);
+                assert_eq!(game.bridges.get_untracked()[0], want);
+            }
+        });
+    }
+
     proptest! {
         #![proptest_config(config(128))]
 
@@ -487,19 +545,25 @@ mod tests {
                 let game = playing(n);
                 let mut states = vec![game.bridges.get_untracked()];
                 for &(edge, add) in &clicks {
+                    let before = game.bridges.get_untracked();
                     game.cycle(edge % n, if add { 1 } else { -1 });
                     let bridges = game.bridges.get_untracked();
                     prop_assert!(bridges.len() == n && bridges.iter().all(|&b| b <= 2));
-                    // Every click changes its bridge
-                    prop_assert_ne!(states.last(), Some(&bridges));
-                    states.push(bridges);
+                    // Every click changes its bridge, except taking one away where there is none
+                    if !add && before[edge % n] == 0 {
+                        prop_assert_eq!(&bridges, &before);
+                    } else {
+                        prop_assert_ne!(&bridges, &before);
+                        states.push(bridges);
+                    }
                 }
-                prop_assert_eq!(game.moves.get_untracked() as usize, clicks.len());
-                let back = back.min(clicks.len() + 2);
+                let steps = states.len() - 1;
+                prop_assert_eq!(game.moves.get_untracked() as usize, steps);
+                let back = back.min(steps + 2);
                 for _ in 0..back {
                     game.undo();
                 }
-                let at = clicks.len().saturating_sub(back);
+                let at = steps.saturating_sub(back);
                 prop_assert_eq!(&game.bridges.get_untracked(), &states[at]);
                 for _ in 0..back {
                     game.redo();

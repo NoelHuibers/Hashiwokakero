@@ -147,9 +147,10 @@ pub fn BoardView(
     let cycle = move |edge: usize, delta: i8| {
         let Some(cb) = on_cycle else { return };
         let current = bridges.with_untracked(|b| b.get(edge).copied().unwrap_or(0));
-        let next = (current.cast_signed() + delta)
-            .rem_euclid(3)
-            .cast_unsigned();
+        // Removing where there is no bridge does nothing: no sound, no move
+        let Some(next) = crate::state::step_bridge(current, delta) else {
+            return;
+        };
         let blocked = current == 0
             && next > 0
             && board.with_untracked(|b| bridges.with_untracked(|br| b.is_blocked(br, edge)));
