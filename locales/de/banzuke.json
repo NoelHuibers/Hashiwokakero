@@ -4,7 +4,7 @@
   "later": "Nächste Woche",
   "live": "läuft bis Sonntag, Mitternacht UTC",
   "final_state": "endgültig",
-  "empty": "Diese Woche hat noch niemand ein gewertetes Tagesrätsel. Die erste Brücke eröffnet das Turnier!",
+  "empty": "Diese Woche hat noch niemand ein gewertetes Tagesrätsel. Das Banzuke der Woche füllt sich, wenn Mitglieder das Tagesrätsel spielen – die erste Brücke eröffnet das Turnier!",
   "today_hidden": "Die heutigen Ergebnisse zählen, sobald du das heutige Tagesrätsel selbst gelöst hast.",
   "play": "Tagesrätsel spielen",
   "plate": "{{ title }} · Platz {{ place }}",

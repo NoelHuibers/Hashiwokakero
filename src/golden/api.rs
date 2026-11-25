@@ -244,6 +244,7 @@ fn requests() -> Vec<Entry> {
             id: 2,
             monday: Some(20_377),
         }),
+        entry(&api::LoadGroupAllTime { id: 2 }),
         // contact
         entry(&api::SendMessage {
             name: "Ada".into(),

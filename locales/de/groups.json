@@ -67,7 +67,9 @@
     "play": "Tagesrätsel spielen",
     "done": "geschafft",
     "waiting": "offen",
-    "unranked": "ohne Wertung"
+    "unranked": "ohne Wertung",
+    "empty": "Sobald Mitglieder das heutige Tagesrätsel lösen, erscheint hier die Rangliste, die Schnellsten zuerst.",
+    "alone": "Du warst heute als Erstes fertig. Die anderen werden hier nach Zeit eingereiht, sobald sie fertig sind."
   },
   "week": {
     "title": "Woche",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: gelöst",
     "missed": "{{ name }} · {{ date }}: verpasst",
     "open": "{{ name }} · {{ date }}: noch offen"
+  },
+  "all_time": {
+    "title": "Ewige Tabelle",
+    "since": "Gezählt seit {{ date }}",
+    "empty": "Hier sammeln sich die Siege, sobald ihr spielt: ein Tagesrätsel gegen mindestens ein anderes Mitglied gewonnen, ein Rennen gewonnen, eine Woche als Yokozuna.",
+    "member": "Mitglied",
+    "daily": "Tagessiege",
+    "daily_short": "Tage",
+    "races": "Rennsiege",
+    "races_short": "Rennen",
+    "yokozuna": "Yokozuna-Wochen",
+    "yokozuna_short": "Yoko.",
+    "streak": "Serie",
+    "streak_short": "Serie",
+    "streak_tip": "Aktuelle Serie im Tagesrätsel",
+    "rules": {
+      "title": "So wird gezählt",
+      "daily": "Ein Tagessieg: das schnellste gewertete Tagesrätsel der Gruppe an einem Tag, an dem mindestens zwei Mitglieder es gespielt haben. Bei gleicher Zeit gewinnen alle.",
+      "races": "Ein Rennsieg: die schnellste Lösung in einem Rennen mit mindestens zwei Mitgliedern, ohne aufzugeben. Bei gleicher Zeit gewinnen alle.",
+      "yokozuna": "Yokozuna-Wochen: abgeschlossene Wochen, in denen das Mitglied das Banzuke angeführt hat, mit mindestens zwei Mitgliedern darauf.",
+      "members": "Gezählt für die aktuellen Mitglieder ab der ersten Woche der Gruppe, die heutigen Tagesrätsel, sobald du deins gelöst hast. Tippe auf eine Spaltenüberschrift, um danach zu sortieren."
+    }
   },
   "members": {
     "title": "Mitglieder",

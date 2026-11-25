@@ -4,7 +4,7 @@
   "later": "Następny tydzień",
   "live": "trwa do północy UTC w niedzielę",
   "final_state": "ostateczny",
-  "empty": "W tym tygodniu nikt nie ma jeszcze łamigłówki dnia w rankingu. Pierwszy most otwiera turniej!",
+  "empty": "W tym tygodniu nikt nie ma jeszcze łamigłówki dnia w rankingu. Banzuke tygodnia wypełnia się, gdy członkowie grają w łamigłówkę dnia – pierwszy most otwiera turniej!",
   "today_hidden": "Dzisiejsze wyniki liczą się po samodzielnym ukończeniu dzisiejszej łamigłówki dnia.",
   "play": "Zagraj w dzisiejszy most",
   "plate": "{{ title }} · miejsce {{ place }}",

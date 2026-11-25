@@ -6,6 +6,7 @@
 //! stack in [`GroupView`]: the main column for what happens in the group, the side column for
 //! the group itself.
 
+pub mod all_time;
 pub mod archipelago;
 pub mod awards;
 pub mod banzuke;
@@ -37,6 +38,7 @@ use crate::model::{GroupPage, GroupSummary, MAX_MEMBERS, group_day};
 use crate::seo::title_text;
 use crate::state::{Auth, error_toast};
 
+use all_time::AllTimeCard;
 use archipelago::Archipelago;
 use banzuke::BanzukeCard;
 use create::{CreateCard, ReadyCard};
@@ -254,6 +256,7 @@ fn GroupView(group: GroupContext) -> impl IntoView {
                 <ReplayCard group />
                 <WeekCard group />
                 <BanzukeCard group crowns />
+                <AllTimeCard group />
             </div>
             <aside class="flex min-w-0 flex-col gap-6">
                 <MembersCard group />

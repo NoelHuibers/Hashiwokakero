@@ -67,7 +67,9 @@
     "play": "Speel de dagpuzzel van vandaag",
     "done": "klaar",
     "waiting": "wacht nog",
-    "unranked": "buiten de ranking"
+    "unranked": "buiten de ranking",
+    "empty": "Zodra leden de dagpuzzel van vandaag afronden, verschijnt hier de ranking, de snelste bovenaan.",
+    "alone": "Jij was vandaag als eerste klaar. De anderen komen hier op tijd te staan zodra ze klaar zijn."
   },
   "week": {
     "title": "Week",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: opgelost",
     "missed": "{{ name }} · {{ date }}: gemist",
     "open": "{{ name }} · {{ date }}: nog te spelen"
+  },
+  "all_time": {
+    "title": "Aller tijden",
+    "since": "Geteld sinds {{ date }}",
+    "empty": "Hier tellen de overwinningen op terwijl jullie spelen: een dagpuzzel gewonnen van minstens één ander lid, een gewonnen race, een week als yokozuna.",
+    "member": "Lid",
+    "daily": "Dagzeges",
+    "daily_short": "Dagen",
+    "races": "Racezeges",
+    "races_short": "Races",
+    "yokozuna": "Weken als yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Reeks",
+    "streak_short": "Reeks",
+    "streak_tip": "Huidige reeks dagpuzzels",
+    "rules": {
+      "title": "Zo wordt er geteld",
+      "daily": "Een dagzege: de snelste dagpuzzel in de ranking van de groep op een dag dat minstens twee leden hem speelden. Bij gelijke tijd winnen ze allemaal.",
+      "races": "Een racezege: de snelste oplossing in een race met minstens twee leden, zonder op te geven. Bij gelijke tijd winnen ze allemaal.",
+      "yokozuna": "Weken als yokozuna: afgelopen weken waarin het lid bovenaan de banzuke stond, met minstens twee leden erop.",
+      "members": "Geteld voor de huidige leden vanaf de eerste week van de groep, de dagpuzzels van vandaag zodra je de jouwe hebt afgerond. Tik op een kolomkop om erop te sorteren."
+    }
   },
   "members": {
     "title": "Leden",

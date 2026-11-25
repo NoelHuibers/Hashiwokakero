@@ -4,6 +4,7 @@
 
 mod achievements;
 mod admin;
+mod all_time;
 mod banzuke;
 mod calendar;
 mod daily;
@@ -30,6 +31,7 @@ mod tests;
 
 pub use achievements::*;
 pub use admin::*;
+pub use all_time::*;
 pub use banzuke::*;
 pub use calendar::*;
 pub use daily::*;

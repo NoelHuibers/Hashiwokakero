@@ -67,7 +67,9 @@
     "play": "Jogar o desafio de hoje",
     "done": "concluído",
     "waiting": "aguardando",
-    "unranked": "fora do ranking"
+    "unranked": "fora do ranking",
+    "empty": "Quando os membros terminarem o desafio de hoje, a classificação aparece aqui, do mais rápido ao mais lento.",
+    "alone": "Você terminou antes de todos hoje. Os outros aparecem aqui pelo tempo assim que terminarem."
   },
   "week": {
     "title": "Semana",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: resolvido",
     "missed": "{{ name }} · {{ date }}: perdido",
     "open": "{{ name }} · {{ date }}: ainda por jogar"
+  },
+  "all_time": {
+    "title": "De todos os tempos",
+    "since": "Contado desde {{ date }}",
+    "empty": "As vitórias se somam aqui conforme vocês jogam: um desafio do dia vencido contra pelo menos outro membro, uma corrida vencida, uma semana como yokozuna.",
+    "member": "Membro",
+    "daily": "Desafios vencidos",
+    "daily_short": "Dias",
+    "races": "Corridas vencidas",
+    "races_short": "Corr.",
+    "yokozuna": "Semanas de yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Sequência",
+    "streak_short": "Seq.",
+    "streak_tip": "Sequência atual de desafios do dia",
+    "rules": {
+      "title": "Como é contado",
+      "daily": "Um desafio vencido: o desafio do dia ranqueado mais rápido do grupo, num dia em que pelo menos dois membros o jogaram. Com o mesmo tempo, todos vencem.",
+      "races": "Uma corrida vencida: a solução mais rápida de uma corrida com pelo menos dois membros, sem desistir. Com o mesmo tempo, todos vencem.",
+      "yokozuna": "Semanas de yokozuna: as semanas encerradas em que o membro liderou o banzuke, com pelo menos dois membros nele.",
+      "members": "Contado para os membros atuais desde a primeira semana do grupo, os desafios de hoje depois que você terminar o seu. Toque no cabeçalho de uma coluna para ordenar."
+    }
   },
   "members": {
     "title": "Membros",

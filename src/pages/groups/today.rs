@@ -204,6 +204,25 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
     let place = (board.group_id, board.day);
     let open = board.open;
     let hanko = HankoBoard::new(&board, me);
+    // While there's no ranking to compare yet, what will be here: before anyone finished, and
+    // when the viewer is the only one done (`Some(true)`)
+    let hint = if !open && done == 0 {
+        Some(false)
+    } else if open && done < 2 && total > 1 {
+        Some(true)
+    } else {
+        None
+    };
+    let hint = hint.map(|alone| {
+        let text = move || {
+            if alone {
+                t_string!(i18n, groups.today.alone).to_string()
+            } else {
+                t_string!(i18n, groups.today.empty).to_string()
+            }
+        };
+        view! { <p class="text-sm text-muted-foreground" data-testid="today-empty">{text}</p> }
+    });
     let summary = if open {
         None
     } else {
@@ -254,6 +273,7 @@ pub fn TodayBoard(board: GroupToday, me: Option<i64>) -> impl IntoView {
                     </tbody>
                 </table>
             </div>
+            {hint}
         </div>
     }
 }

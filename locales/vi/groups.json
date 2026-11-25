@@ -67,7 +67,9 @@
     "play": "Chơi câu đố hôm nay",
     "done": "đã xong",
     "waiting": "đang chờ",
-    "unranked": "không xếp hạng"
+    "unranked": "không xếp hạng",
+    "empty": "Khi các thành viên giải xong câu đố hôm nay, bảng xếp hạng sẽ hiện ở đây, người nhanh nhất ở trên.",
+    "alone": "Hôm nay bạn xong đầu tiên. Những người khác sẽ hiện ở đây theo thời gian khi họ xong."
   },
   "week": {
     "title": "Tuần",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: đã giải",
     "missed": "{{ name }} · {{ date }}: bỏ lỡ",
     "open": "{{ name }} · {{ date }}: chưa chơi"
+  },
+  "all_time": {
+    "title": "Mọi thời đại",
+    "since": "Tính từ {{ date }}",
+    "empty": "Chiến thắng được cộng dồn ở đây khi các bạn chơi: một câu đố ngày thắng ít nhất một thành viên khác, một cuộc đua thắng, một tuần làm yokozuna.",
+    "member": "Thành viên",
+    "daily": "Thắng ngày",
+    "daily_short": "Ngày",
+    "races": "Thắng đua",
+    "races_short": "Đua",
+    "yokozuna": "Tuần yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Chuỗi",
+    "streak_short": "Chuỗi",
+    "streak_tip": "Chuỗi câu đố ngày hiện tại",
+    "rules": {
+      "title": "Cách tính",
+      "daily": "Thắng ngày: câu đố ngày được xếp hạng nhanh nhất nhóm vào ngày có ít nhất hai thành viên chơi. Bằng thời gian thì tất cả đều thắng.",
+      "races": "Thắng đua: lời giải nhanh nhất trong cuộc đua có ít nhất hai thành viên tham gia, không bỏ cuộc. Bằng thời gian thì tất cả đều thắng.",
+      "yokozuna": "Tuần yokozuna: những tuần đã kết thúc mà thành viên đứng đầu banzuke, với ít nhất hai thành viên trên đó.",
+      "members": "Tính cho các thành viên hiện tại từ tuần đầu tiên của nhóm, câu đố hôm nay khi bạn đã giải xong câu của mình. Chạm vào tiêu đề cột để sắp xếp."
+    }
   },
   "members": {
     "title": "Thành viên",

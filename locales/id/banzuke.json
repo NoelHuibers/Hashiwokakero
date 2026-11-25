@@ -4,7 +4,7 @@
   "later": "Pekan berikutnya",
   "live": "berlangsung sampai Minggu tengah malam UTC",
   "final_state": "selesai",
-  "empty": "Belum ada yang punya teka-teki harian berperingkat pekan ini. Jembatan pertama membuka turnamen!",
+  "empty": "Belum ada yang punya teka-teki harian berperingkat pekan ini. Banzuke pekan ini terisi seiring anggota memainkan teka-teki harian – jembatan pertama membuka turnamen!",
   "today_hidden": "Hasil hari ini dihitung setelah kamu sendiri menyelesaikan teka-teki harian hari ini.",
   "play": "Mainkan teka-teki hari ini",
   "plate": "{{ title }} · peringkat {{ place }}",

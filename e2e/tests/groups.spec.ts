@@ -145,6 +145,31 @@ test('the seeded group: islands, bridges, a closed board and the week', async ({
   await card(page, /^Week/).getByRole('button', { name: 'Earlier week' }).click();
   await expect(card(page, /^Week/).locator('td[data-cell="open"]')).toHaveCount(0);
   await expect(card(page, /^Week/).locator('td[data-cell="solved"]').first()).toBeVisible();
+
+  // The all time table: a line per member, aiko's marked, by daily wins at first
+  const allTime = page.getByTestId('all-time');
+  await expect(allTime.getByRole('heading', { name: /^All time/ })).toBeVisible();
+  const lines = allTime.locator('tbody tr[data-member]');
+  await expect(lines).toHaveCount(SEEDED_GROUP.members.length);
+  await expect(allTime.locator('tbody tr.rank-mark')).toHaveCount(1);
+  const column = (id: string) => allTime.locator(`th[data-column="${id}"]`);
+  const values = (id: string) =>
+    allTime
+      .locator(`tbody td[data-column="${id}"]`)
+      .allInnerTexts()
+      .then((v) => v.map(Number));
+  const descending = (v: number[]) => v.every((n, i) => i === 0 || v[i - 1] >= n);
+  await expect(column('daily')).toHaveAttribute('aria-sort', 'descending');
+  expect(descending(await values('daily'))).toBe(true);
+  // A heading sorts by its column, the most first, again for the fewest first
+  const races = allTime.getByRole('button', { name: 'Race wins' });
+  await races.click();
+  await expect(column('races')).toHaveAttribute('aria-sort', 'descending');
+  await expect(column('daily')).toHaveAttribute('aria-sort', 'none');
+  await expect.poll(async () => descending(await values('races'))).toBe(true);
+  await races.click();
+  await expect(column('races')).toHaveAttribute('aria-sort', 'ascending');
+  await expect.poll(async () => descending((await values('races')).reverse())).toBe(true);
 });
 
 test('strangers see no group, and a broken link says so', async ({ page }) => {
@@ -169,6 +194,14 @@ test('the last one to leave deletes the group, and is told so first', async ({ p
     .click();
   await expect(page.getByRole('heading', { level: 1, name: 'Solo Bridges' })).toBeVisible();
   await hydrated(page);
+  // A new group: the ranking cards say what shows up there, and when
+  await expect(page.getByTestId('today-empty')).toHaveText(
+    "Once members finish today's daily, the ranking shows up here, fastest first.",
+  );
+  await expect(page.getByTestId('banzuke-empty')).toContainText('fills in as members play');
+  const allTime = page.getByTestId('all-time');
+  await expect(allTime.getByTestId('all-time-empty')).toContainText('Wins add up here');
+  await expect(allTime.locator('tbody tr[data-member]')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Leave the group' })).toHaveCount(0);
 
   // The question, in the page's own dialog, says what goes; saying no keeps everything

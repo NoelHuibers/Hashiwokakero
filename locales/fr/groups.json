@@ -67,7 +67,9 @@
     "play": "Jouer le défi du jour",
     "done": "fini",
     "waiting": "en attente",
-    "unranked": "hors classement"
+    "unranked": "hors classement",
+    "empty": "Dès que des membres terminent le défi du jour, le classement s’affiche ici, les plus rapides en tête.",
+    "alone": "Tu as fini en premier aujourd’hui. Les autres seront classés ici selon leur temps dès qu’ils auront terminé."
   },
   "week": {
     "title": "Semaine",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }} : résolu",
     "missed": "{{ name }} · {{ date }} : manqué",
     "open": "{{ name }} · {{ date }} : pas encore joué"
+  },
+  "all_time": {
+    "title": "Palmarès",
+    "since": "Compté depuis le {{ date }}",
+    "empty": "Les victoires s’additionnent ici au fil des parties : un défi du jour gagné face à au moins un autre membre, une course gagnée, une semaine en yokozuna.",
+    "member": "Membre",
+    "daily": "Défis gagnés",
+    "daily_short": "Jours",
+    "races": "Courses gagnées",
+    "races_short": "Courses",
+    "yokozuna": "Semaines en yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Série",
+    "streak_short": "Série",
+    "streak_tip": "Série actuelle de défis du jour",
+    "rules": {
+      "title": "Comment c’est compté",
+      "daily": "Un défi gagné : le défi du jour classé le plus rapide du groupe, un jour où au moins deux membres l’ont joué. À temps égal, tous gagnent.",
+      "races": "Une course gagnée : la résolution la plus rapide d’une course rejointe par au moins deux membres, sans abandon. À temps égal, tous gagnent.",
+      "yokozuna": "Semaines en yokozuna : les semaines terminées où le membre était en tête du banzuke, avec au moins deux membres classés.",
+      "members": "Compté pour les membres actuels depuis la première semaine du groupe, les défis d’aujourd’hui une fois que tu as terminé le tien. Touche un en-tête de colonne pour trier."
+    }
   },
   "members": {
     "title": "Membres",

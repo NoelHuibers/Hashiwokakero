@@ -4,7 +4,7 @@
   "later": "Semana seguinte",
   "live": "em andamento até domingo, meia-noite UTC",
   "final_state": "encerrado",
-  "empty": "Ninguém tem um desafio ranqueado nesta semana ainda. A primeira ponte abre o torneio!",
+  "empty": "Ninguém tem um desafio ranqueado nesta semana ainda. O banzuke da semana se preenche conforme os membros jogam o desafio do dia – a primeira ponte abre o torneio!",
   "today_hidden": "Os resultados de hoje contam depois que você mesmo terminar o desafio de hoje.",
   "play": "Jogar o desafio de hoje",
   "plate": "{{ title }} · {{ place }}º lugar",

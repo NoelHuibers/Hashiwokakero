@@ -4,7 +4,7 @@
   "later": "Sonraki hafta",
   "live": "pazar gece yarısına (UTC) kadar sürüyor",
   "final_state": "kesin",
-  "empty": "Bu hafta henüz kimsenin sıralamaya giren bir günlük bulmacası yok. İlk köprü turnuvayı açar!",
+  "empty": "Bu hafta henüz kimsenin sıralamaya giren bir günlük bulmacası yok. Haftanın banzukesi, üyeler günlük bulmacayı oynadıkça dolar – ilk köprü turnuvayı açar!",
   "today_hidden": "Bugünün sonuçları, bugünün günlük bulmacasını sen de bitirince sayılır.",
   "play": "Bugünün bulmacasını oyna",
   "plate": "{{ title }} · {{ place }}. sıra",

@@ -291,7 +291,9 @@ fn Scroll(banzuke: Banzuke, me: i64) -> impl IntoView {
                 {(!anyone)
                     .then(|| {
                         view! {
-                            <p class="ink-soft px-3 pb-3 text-sm italic">{t!(i18n, banzuke.empty)}</p>
+                            <p class="ink-soft px-3 pb-3 text-sm italic" data-testid="banzuke-empty">
+                                {t!(i18n, banzuke.empty)}
+                            </p>
                         }
                     })}
                 <ol class="flex flex-col pb-1">{lines}</ol>

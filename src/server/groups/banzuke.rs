@@ -22,7 +22,7 @@ use crate::model::{
 use crate::server::db::db_err;
 
 /// The ranked dailies (finished, not given up, not flagged) of some members between two days.
-async fn ranked(
+pub(super) async fn ranked(
     conn: &Connection,
     members: &[i64],
     from: i64,
@@ -87,7 +87,11 @@ async fn medians(
 
 /// Whether `user` finished the daily of `day`, solved or given up: the same as for the board
 /// of today (`model::spoiler_safe`).
-async fn finished(conn: &Connection, user: i64, day: i64) -> Result<bool, ServerFnError> {
+pub(super) async fn finished(
+    conn: &Connection,
+    user: i64,
+    day: i64,
+) -> Result<bool, ServerFnError> {
     let mut rows = conn
         .query(
             "SELECT 1 FROM attempts WHERE user_id = ?1 AND day = ?2
@@ -100,7 +104,7 @@ async fn finished(conn: &Connection, user: i64, day: i64) -> Result<bool, Server
 }
 
 /// The first Monday of a group.
-fn first_monday(group: &Group) -> i64 {
+pub(super) fn first_monday(group: &Group) -> i64 {
     monday_of(group_day(group.created_at))
 }
 

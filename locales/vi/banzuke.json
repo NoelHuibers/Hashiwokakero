@@ -4,7 +4,7 @@
   "later": "Tuần sau",
   "live": "đang diễn ra đến nửa đêm Chủ nhật (UTC)",
   "final_state": "chung cuộc",
-  "empty": "Tuần này chưa ai có câu đố ngày được xếp hạng. Cây cầu đầu tiên sẽ mở màn giải đấu!",
+  "empty": "Tuần này chưa ai có câu đố ngày được xếp hạng. Banzuke của tuần sẽ dần đầy khi các thành viên chơi câu đố ngày – cây cầu đầu tiên sẽ mở màn giải đấu!",
   "today_hidden": "Kết quả hôm nay được tính khi chính bạn đã giải xong câu đố hôm nay.",
   "play": "Chơi câu đố hôm nay",
   "plate": "{{ title }} · hạng {{ place }}",

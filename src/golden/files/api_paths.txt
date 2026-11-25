@@ -53,6 +53,7 @@
 /api/load_dojo_seasons POST application/json -> application/json
 /api/load_dojo_submission POST application/json -> application/json
 /api/load_group POST application/json -> application/json
+/api/load_group_all_time POST application/json -> application/json
 /api/load_group_puzzle POST application/json -> application/json
 /api/load_group_puzzles POST application/json -> application/json
 /api/load_group_races POST application/json -> application/json
