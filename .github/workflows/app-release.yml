@@ -367,15 +367,25 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       # Only main saves caches; a tag's would only be seen by that tag
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: false
       - name: Install Trunk
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y trunk@0.22.0
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y trunk@0.22.0
+      # wasm-bindgen and wasm-opt on the PATH, from the cache of CI's "Build app (web)" or downloaded
+      # with retries (.github/scripts/wasm-tools.sh)
+      - id: wasm-tools
+        run: .github/scripts/wasm-tools.sh trunk key
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/wasm-tools
+          key: ${{ steps.wasm-tools.outputs.key }}
+      - name: wasm-bindgen and wasm-opt
+        run: .github/scripts/wasm-tools.sh trunk install
       # The Microsoft Store's and the Snap Store's apps link their update to their page in the
       # store (api::app)
       - name: Build
@@ -420,20 +430,22 @@ jobs:
           cache-read-only: true
       - name: Android NDK and bundletool
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
+          .github/scripts/retry.sh "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
-          curl -sSfL -o "$RUNNER_TEMP/bundletool.jar" \
+          curl -sSfL --retry 3 --retry-all-errors --retry-delay 5 -o "$RUNNER_TEMP/bundletool.jar" \
             "https://github.com/google/bundletool/releases/download/$BUNDLETOOL_VERSION/bundletool-all-$BUNDLETOOL_VERSION.jar"
           echo "$BUNDLETOOL_SHA256  $RUNNER_TEMP/bundletool.jar" | sha256sum -c
-      - run: rustup toolchain install && rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
+      - run: |
+          .github/scripts/retry.sh rustup toolchain install
+          .github/scripts/retry.sh rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
           save-if: false
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y tauri-cli@2.12.4
       - uses: actions/download-artifact@v8
         with:
           name: app-web-release
@@ -651,7 +663,7 @@ jobs:
       - if: steps.key.outputs.built == 'true'
         name: Android NDK
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
+          .github/scripts/retry.sh "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION" "build-tools;$BUILD_TOOLS_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
       # Tailwind, and the fonts of public/fonts (postinstall)
       - if: steps.key.outputs.built == 'true'
@@ -662,8 +674,8 @@ jobs:
       - if: steps.key.outputs.built == 'true'
         name: Install Trunk and the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y trunk@0.22.0 tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y trunk@0.22.0 tauri-cli@2.12.4
       # Release, an APK per ABI (arm64 + 32-bit ARM + x86_64), with the web bundle. In a copy of the
       # checkout where F-Droid's build server builds (/home/vagrant/build/rs.hashi): Cargo hashes
       # the absolute path of the path dependencies outside app/src-tauri's workspace (backend,
@@ -745,7 +757,9 @@ jobs:
       - uses: actions/checkout@v7
       - name: Xcode
         run: xcodebuild -version | tee -a "$GITHUB_STEP_SUMMARY"
-      - run: rustup toolchain install && rustup target add aarch64-apple-ios
+      - run: |
+          .github/scripts/retry.sh rustup toolchain install
+          .github/scripts/retry.sh rustup target add aarch64-apple-ios
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
@@ -753,8 +767,8 @@ jobs:
       # The arm64 build of the CLI, as in ci.yml
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
           file ~/.cargo/bin/cargo-tauri | grep -q arm64
       - uses: actions/download-artifact@v8
         with:
@@ -977,10 +991,10 @@ jobs:
             libayatana-appindicator3-dev librsvg2-dev patchelf
       - name: Rust
         run: |
-          rustup toolchain install
+          .github/scripts/retry.sh rustup toolchain install
           case "$TARGET" in
-            universal-apple-darwin) rustup target add aarch64-apple-darwin x86_64-apple-darwin ;;
-            ?*) rustup target add "$TARGET" ;;
+            universal-apple-darwin) .github/scripts/retry.sh rustup target add aarch64-apple-darwin x86_64-apple-darwin ;;
+            ?*) .github/scripts/retry.sh rustup target add "$TARGET" ;;
           esac
       - uses: taiki-e/install-action@v2
         with:
@@ -989,9 +1003,9 @@ jobs:
       - name: Install the Tauri CLI
         run: |
           if [ "$SYSTEM" = macos ]; then
-            cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+            .github/scripts/retry.sh cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
           else
-            cargo binstall -y tauri-cli@2.12.4
+            .github/scripts/retry.sh cargo binstall -y tauri-cli@2.12.4
           fi
           cargo tauri --version
       - uses: actions/download-artifact@v8

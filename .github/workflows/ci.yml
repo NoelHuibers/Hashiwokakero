@@ -79,8 +79,9 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@v7
-      # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy)
-      - run: rustup toolchain install
+      # Installs the toolchain from rust-toolchain.toml (stable + wasm32 target, rustfmt, clippy).
+      # Downloads in this workflow go through .github/scripts/retry.sh: tried again after a failure.
+      - run: .github/scripts/retry.sh rustup toolchain install
       # Only main saves its cache, pull requests start from it. Caches of pull requests could only
       # be used by the same pull request and push main's out of the 10 GB limit.
       - uses: Swatinem/rust-cache@v2
@@ -151,7 +152,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -179,7 +180,7 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: 0
     steps:
       - uses: actions/checkout@v7
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -226,14 +227,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install cargo-leptos
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y cargo-leptos@0.3.11
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y cargo-leptos@0.3.11
       - name: Build
         run: cargo leptos build --release --cargo-locked --server-only
       # The server binary, for the browser tests and the deploy below. A tarball keeps it
@@ -270,14 +271,25 @@ jobs:
       # The E2E job runs in the Playwright image of this version, see there
       - id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install cargo-leptos
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y cargo-leptos@0.3.11
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y cargo-leptos@0.3.11
+      # wasm-bindgen and wasm-opt on the PATH, from this cache or downloaded with retries
+      # (.github/scripts/wasm-tools.sh): cargo-leptos downloaded them during the build otherwise,
+      # without retries. A few MB, saved only when the versions change, by pull requests too.
+      - id: wasm-tools
+        run: .github/scripts/wasm-tools.sh cargo-leptos key
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/wasm-tools
+          key: ${{ steps.wasm-tools.outputs.key }}
+      - name: wasm-bindgen and wasm-opt
+        run: .github/scripts/wasm-tools.sh cargo-leptos install
       - name: Build
         run: cargo leptos build --release --cargo-locked --frontend-only
       # The hashes of the JS/WASM/CSS file names (read next to the server binary) and the site
@@ -494,16 +506,26 @@ jobs:
           cache: pnpm
       # The Tailwind CLI, and the fonts in public/fonts (postinstall, scripts/fonts.ts)
       - run: pnpm install --frozen-lockfile
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
-      # Pinned, like trunk-version in app/Trunk.toml. Trunk fetches the wasm-bindgen of
-      # Cargo.lock and wasm-opt itself.
+      # Pinned, like trunk-version in app/Trunk.toml
       - name: Install Trunk
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y trunk@0.22.0
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y trunk@0.22.0
+      # wasm-bindgen and wasm-opt on the PATH, from this cache or downloaded with retries
+      # (.github/scripts/wasm-tools.sh), as for "Build site (browser)": Trunk downloaded them during
+      # the build otherwise.
+      - id: wasm-tools
+        run: .github/scripts/wasm-tools.sh trunk key
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/wasm-tools
+          key: ${{ steps.wasm-tools.outputs.key }}
+      - name: wasm-bindgen and wasm-opt
+        run: .github/scripts/wasm-tools.sh trunk install
       # hashi itself is linted with csr in "Lint (browser)"
       - name: Clippy
         run: cargo clippy --locked -p hashi_app --target wasm32-unknown-unknown -- -D warnings
@@ -612,18 +634,20 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Android NDK
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
+          .github/scripts/retry.sh "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
       # The Android target in this job only, not in rust-toolchain.toml (every job would get it)
-      - run: rustup toolchain install && rustup target add aarch64-linux-android
+      - run: |
+          .github/scripts/retry.sh rustup toolchain install
+          .github/scripts/retry.sh rustup target add aarch64-linux-android
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y tauri-cli@2.12.4
       # The web bundle, which Tauri puts into the app (frontendDist in tauri.conf.json)
       - uses: actions/download-artifact@v8
         with:
@@ -714,17 +738,19 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Android NDK
         run: |
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
+          .github/scripts/retry.sh "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;$NDK_VERSION"
           echo "NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
-      - run: rustup toolchain install && rustup target add x86_64-linux-android
+      - run: |
+          .github/scripts/retry.sh rustup toolchain install
+          .github/scripts/retry.sh rustup target add x86_64-linux-android
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y tauri-cli@2.12.4
       - uses: actions/download-artifact@v8
         with:
           name: app-web
@@ -863,15 +889,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
             libayatana-appindicator3-dev librsvg2-dev xvfb xdotool imagemagick dbus-x11
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
           save-if: ${{ github.ref == 'refs/heads/main' }}
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y tauri-cli@2.12.4
       - uses: actions/download-artifact@v8
         with:
           name: app-web
@@ -967,7 +993,9 @@ jobs:
           xcrun simctl boot "$udid"
       # The iOS targets in this job only, like the Android one: devices, and the simulator on
       # Apple silicon
-      - run: rustup toolchain install && rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - run: |
+          .github/scripts/retry.sh rustup toolchain install
+          .github/scripts/retry.sh rustup target add aarch64-apple-ios aarch64-apple-ios-sim
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: app/src-tauri
@@ -977,8 +1005,8 @@ jobs:
       # Rosetta, and with it the Xcode build it starts.
       - name: Install the Tauri CLI
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y --targets aarch64-apple-darwin --pkg-fmt zip tauri-cli@2.12.4
           file ~/.cargo/bin/cargo-tauri | grep -q arm64
       - uses: actions/download-artifact@v8
         with:
@@ -1041,9 +1069,10 @@ jobs:
         working-directory: ${{ runner.temp }}
         run: |
           echo "appium $(date +%s)" >> "$TIMES"
-          npm install --global --no-fund --no-audit "appium@$APPIUM_VERSION"
-          appium driver install "xcuitest@$XCUITEST_VERSION"
-          appium driver run xcuitest download-wda -- --kind sim --platform iOS --outdir "$RUNNER_TEMP/wda"
+          retry="$GITHUB_WORKSPACE/.github/scripts/retry.sh"
+          "$retry" npm install --global --no-fund --no-audit "appium@$APPIUM_VERSION"
+          "$retry" appium driver install "xcuitest@$XCUITEST_VERSION"
+          "$retry" appium driver run xcuitest download-wda -- --kind sim --platform iOS --outdir "$RUNNER_TEMP/wda"
           echo "E2E_WDA=$(ls -d "$RUNNER_TEMP"/wda/*.app)" >> "$GITHUB_ENV"
       # The simulator's traffic leaves through the runner
       - name: Block hashi.rs
@@ -1298,7 +1327,7 @@ jobs:
       CARGO_BUILD_JOBS: 2
     steps:
       - uses: actions/checkout@v7
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: ${{ github.ref == 'refs/heads/main' }}
@@ -1370,7 +1399,7 @@ jobs:
       - if: env.HASHI_ADMIN_TOKEN != ''
         uses: actions/checkout@v7
       - if: env.HASHI_ADMIN_TOKEN != ''
-        run: rustup toolchain install
+        run: .github/scripts/retry.sh rustup toolchain install
       - if: env.HASHI_ADMIN_TOKEN != ''
         uses: Swatinem/rust-cache@v2
       - if: env.HASHI_ADMIN_TOKEN != ''
