@@ -206,7 +206,7 @@ replaced through Play's support). Left, in this order (details in
    request is merged, run it by hand (`gh workflow run store-listing.yml -f platform=both -f
    what=all`, first with `-f platform=play -f validate_only=true` to let Play check it). Left by
    hand in the Play Console (category Puzzle and its tags are set): the privacy policy URL (`https://hashi.rs/datenschutz`, App content),
-   the contact details (`online-impressum.d50dw@passmail.net`, website `https://hashi.rs`), the Data
+   the contact details (`hashi@huibers.io`, website `https://hashi.rs`), the Data
    safety form, content rating, target audience, ads (none), and trader status (EU).
 8. **iOS.** Done: the Apple Developer Program membership, the Team ID `Q35TCGM5PW` (for the
    signing and the Universal Links, in `tauri.conf.json` and `fly.toml`), the bundle ID `rs.hashi` with Associated Domains on, the App

@@ -14,23 +14,24 @@ use crate::seo::PageMeta;
 type Section = (&'static str, &'static [&'static str]);
 
 /// Where people reach us by email, also on the contact page.
-pub const CONTACT_EMAIL: &str = "online-impressum.d50dw@passmail.net";
+pub const CONTACT_EMAIL: &str = "hashi@huibers.io";
 
 const IMPRESSUM_DE: &[Section] = &[
     (
         "Angaben gemäß § 5 DDG",
         &[
             "Noel Huibers",
-            "c/o Online-Impressum 12002",
-            "Europaring 90",
-            "53757 Sankt Augustin",
+            "c/o Impressumservice Dein-Impressum",
+            "Stettiner Str. 41",
+            "35410 Hungen",
             "Deutschland",
         ],
     ),
     (
         "Kontakt",
         &[
-            "E-Mail: online-impressum.d50dw@passmail.net",
+            "Telefon: 0157 9234 1658",
+            "E-Mail: hashi@huibers.io",
             "Kontaktformular: /kontakt",
         ],
     ),
@@ -41,16 +42,17 @@ const IMPRESSUM_EN: &[Section] = &[
         "Information according to § 5 DDG (German Digital Services Act)",
         &[
             "Noel Huibers",
-            "c/o Online-Impressum 12002",
-            "Europaring 90",
-            "53757 Sankt Augustin",
+            "c/o Impressumservice Dein-Impressum",
+            "Stettiner Str. 41",
+            "35410 Hungen",
             "Germany",
         ],
     ),
     (
         "Contact",
         &[
-            "Email: online-impressum.d50dw@passmail.net",
+            "Phone: +49 157 9234 1658",
+            "Email: hashi@huibers.io",
             "Contact form: /kontakt",
         ],
     ),
@@ -60,8 +62,8 @@ const PRIVACY_DE: &[Section] = &[
     (
         "Verantwortlicher",
         &[
-            "Noel Huibers, c/o Online-Impressum 12002, Europaring 90, 53757 Sankt Augustin, Deutschland",
-            "E-Mail: online-impressum.d50dw@passmail.net, Kontaktformular: /kontakt",
+            "Noel Huibers, c/o Impressumservice Dein-Impressum, Stettiner Str. 41, 35410 Hungen, Deutschland",
+            "E-Mail: hashi@huibers.io, Kontaktformular: /kontakt",
         ],
     ),
     (
@@ -229,8 +231,8 @@ const PRIVACY_EN: &[Section] = &[
     (
         "Controller",
         &[
-            "Noel Huibers, c/o Online-Impressum 12002, Europaring 90, 53757 Sankt Augustin, Germany",
-            "Email: online-impressum.d50dw@passmail.net, contact form: /kontakt",
+            "Noel Huibers, c/o Impressumservice Dein-Impressum, Stettiner Str. 41, 35410 Hungen, Germany",
+            "Email: hashi@huibers.io, contact form: /kontakt",
         ],
     ),
     (
