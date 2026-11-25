@@ -67,7 +67,9 @@
     "play": "Bugünün bulmacasını oyna",
     "done": "bitti",
     "waiting": "bekliyor",
-    "unranked": "sıralama dışı"
+    "unranked": "sıralama dışı",
+    "empty": "Üyeler bugünün günlük bulmacasını bitirince sıralama burada görünür, en hızlısı en üstte.",
+    "alone": "Bugün ilk bitiren sensin. Diğerleri bitirdikçe burada sürelerine göre sıralanır."
   },
   "week": {
     "title": "Hafta",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: çözdü",
     "missed": "{{ name }} · {{ date }}: kaçırdı",
     "open": "{{ name }} · {{ date }}: henüz oynanmadı"
+  },
+  "all_time": {
+    "title": "Tüm zamanlar",
+    "since": "{{ date }} tarihinden beri sayılıyor",
+    "empty": "Oynadıkça galibiyetler burada birikir: en az bir üyeye karşı kazanılan günlük bulmaca, kazanılan yarış, yokozuna olunan hafta.",
+    "member": "Üye",
+    "daily": "Günlük galibiyet",
+    "daily_short": "Gün",
+    "races": "Yarış galibiyeti",
+    "races_short": "Yarış",
+    "yokozuna": "Yokozuna haftası",
+    "yokozuna_short": "Yoko.",
+    "streak": "Seri",
+    "streak_short": "Seri",
+    "streak_tip": "Güncel günlük bulmaca serisi",
+    "rules": {
+      "title": "Nasıl sayılır",
+      "daily": "Günlük galibiyet: en az iki üyenin oynadığı bir günde grubun sıralamaya giren en hızlı günlük bulmacası. Süreler eşitse hepsi kazanır.",
+      "races": "Yarış galibiyeti: en az iki üyenin katıldığı bir yarışta pes etmeden en hızlı çözüm. Süreler eşitse hepsi kazanır.",
+      "yokozuna": "Yokozuna haftaları: üyenin banzukede zirvede olduğu ve en az iki üyenin yer aldığı biten haftalar.",
+      "members": "Grubun ilk haftasından beri mevcut üyeler için sayılır, bugünün bulmacaları sen de bitirince. Sıralamak için bir sütun başlığına dokun."
+    }
   },
   "members": {
     "title": "Üyeler",

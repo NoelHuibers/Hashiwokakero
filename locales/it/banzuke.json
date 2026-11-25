@@ -4,7 +4,7 @@
   "later": "Settimana successiva",
   "live": "in corso fino a domenica, mezzanotte UTC",
   "final_state": "definitivo",
-  "empty": "Nessuno ha ancora una sfida in classifica questa settimana. Il primo ponte apre il torneo!",
+  "empty": "Nessuno ha ancora una sfida in classifica questa settimana. Il banzuke della settimana si riempie man mano che i membri giocano la sfida del giorno – il primo ponte apre il torneo!",
   "today_hidden": "I risultati di oggi contano quando hai finito anche tu la sfida di oggi.",
   "play": "Gioca la sfida di oggi",
   "plate": "{{ title }} · {{ place }}° posto",

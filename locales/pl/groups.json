@@ -67,7 +67,9 @@
     "play": "Zagraj w dzisiejszy most",
     "done": "gotowe",
     "waiting": "czeka",
-    "unranked": "poza rankingiem"
+    "unranked": "poza rankingiem",
+    "empty": "Gdy członkowie ukończą dzisiejszą łamigłówkę dnia, pojawi się tu ranking, od najszybszych.",
+    "alone": "Dziś udało ci się skończyć przed wszystkimi. Pozostali pojawią się tu według czasu, gdy skończą."
   },
   "week": {
     "title": "Tydzień",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: rozwiązane",
     "missed": "{{ name }} · {{ date }}: przegapione",
     "open": "{{ name }} · {{ date }}: jeszcze do zagrania"
+  },
+  "all_time": {
+    "title": "Wszech czasów",
+    "since": "Liczone od {{ date }}",
+    "empty": "Tu sumują się zwycięstwa w miarę gry: łamigłówka dnia wygrana z co najmniej jednym innym członkiem, wygrany wyścig, tydzień jako yokozuna.",
+    "member": "Członek",
+    "daily": "Wygrane dni",
+    "daily_short": "Dni",
+    "races": "Wygrane wyścigi",
+    "races_short": "Wyśc.",
+    "yokozuna": "Tygodnie jako yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Seria",
+    "streak_short": "Seria",
+    "streak_tip": "Obecna seria łamigłówek dnia",
+    "rules": {
+      "title": "Jak to jest liczone",
+      "daily": "Wygrany dzień: najszybsza łamigłówka dnia w rankingu grupy w dniu, w którym zagrało co najmniej dwóch członków. Przy równym czasie wygrywają wszyscy.",
+      "races": "Wygrany wyścig: najszybsze rozwiązanie w wyścigu z co najmniej dwoma członkami, bez poddania się. Przy równym czasie wygrywają wszyscy.",
+      "yokozuna": "Tygodnie jako yokozuna: zakończone tygodnie, w których członek prowadził w banzuke, a było na nim co najmniej dwóch członków.",
+      "members": "Liczone dla obecnych członków od pierwszego tygodnia grupy, dzisiejsze łamigłówki, gdy ukończysz swoją. Dotknij nagłówka kolumny, aby posortować."
+    }
   },
   "members": {
     "title": "Członkowie",

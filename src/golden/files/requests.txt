@@ -53,6 +53,7 @@
 /api/load_dojo_seasons {}
 /api/load_dojo_submission {"id":12}
 /api/load_group {"id":2}
+/api/load_group_all_time {"id":2}
 /api/load_group_puzzle {"id":4}
 /api/load_group_puzzles {"group":2}
 /api/load_group_races {"group":2}

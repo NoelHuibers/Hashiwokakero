@@ -4,7 +4,7 @@
   "later": "Semana siguiente",
   "live": "en curso hasta el domingo a medianoche UTC",
   "final_state": "definitivo",
-  "empty": "Nadie tiene todavía un reto clasificado esta semana. ¡El primer puente abre el torneo!",
+  "empty": "Nadie tiene todavía un reto clasificado esta semana. El banzuke de la semana se llena a medida que los miembros juegan el reto del día: ¡el primer puente abre el torneo!",
   "today_hidden": "Los resultados de hoy cuentan cuando hayas terminado tú el reto de hoy.",
   "play": "Jugar el reto de hoy",
   "plate": "{{ title }} · puesto {{ place }}",

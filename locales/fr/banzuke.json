@@ -4,7 +4,7 @@
   "later": "Semaine suivante",
   "live": "en cours jusqu’à dimanche, minuit UTC",
   "final_state": "définitif",
-  "empty": "Personne n’a encore de défi classé cette semaine. Le premier pont ouvre le tournoi !",
+  "empty": "Personne n’a encore de défi classé cette semaine. Le banzuke de la semaine se remplit à mesure que les membres jouent le défi du jour – le premier pont ouvre le tournoi !",
   "today_hidden": "Les résultats du jour comptent une fois que tu as toi-même terminé le défi du jour.",
   "play": "Jouer le défi du jour",
   "plate": "{{ title }} · rang {{ place }}",

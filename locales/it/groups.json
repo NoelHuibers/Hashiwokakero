@@ -67,7 +67,9 @@
     "play": "Gioca la sfida di oggi",
     "done": "finito",
     "waiting": "in attesa",
-    "unranked": "fuori classifica"
+    "unranked": "fuori classifica",
+    "empty": "Quando i membri finiscono la sfida di oggi, qui compare la classifica, dal più veloce.",
+    "alone": "Oggi hai finito prima di tutti. Gli altri compaiono qui in base al tempo, appena finiscono."
   },
   "week": {
     "title": "Settimana",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: risolta",
     "missed": "{{ name }} · {{ date }}: saltata",
     "open": "{{ name }} · {{ date }}: ancora da giocare"
+  },
+  "all_time": {
+    "title": "Di sempre",
+    "since": "Contato dal {{ date }}",
+    "empty": "Le vittorie si sommano qui man mano che giocate: una sfida del giorno vinta contro almeno un altro membro, una gara vinta, una settimana da yokozuna.",
+    "member": "Membro",
+    "daily": "Sfide vinte",
+    "daily_short": "Giorni",
+    "races": "Gare vinte",
+    "races_short": "Gare",
+    "yokozuna": "Settimane da yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Serie",
+    "streak_short": "Serie",
+    "streak_tip": "Serie attuale di sfide del giorno",
+    "rules": {
+      "title": "Come si conta",
+      "daily": "Una sfida vinta: la sfida del giorno in classifica più veloce del gruppo, in un giorno in cui l’hanno giocata almeno due membri. A pari tempo vincono tutti.",
+      "races": "Una gara vinta: la soluzione più veloce di una gara a cui hanno partecipato almeno due membri, senza arrendersi. A pari tempo vincono tutti.",
+      "yokozuna": "Settimane da yokozuna: le settimane concluse in cui il membro era in testa al banzuke, con almeno due membri in classifica.",
+      "members": "Contato per i membri attuali dalla prima settimana del gruppo, le sfide di oggi quando hai finito la tua. Tocca l’intestazione di una colonna per ordinare."
+    }
   },
   "members": {
     "title": "Membri",

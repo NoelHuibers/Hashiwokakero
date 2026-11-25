@@ -1,7 +1,7 @@
 //! Blocks: a player blocks another one, whose name then never reaches them.
 //!
 //! Wherever other players' names go out (the daily, monthly and all time boards, rivals, groups
-//! with their boards, banzuke, week, replays, hanko, puzzles, races and shared puzzles), the server functions pass what
+//! with their boards, banzuke, all time table, week, replays, hanko, puzzles, races and shared puzzles), the server functions pass what
 //! they send through [`hidden`], which puts [`BLOCKED_NAME`] in the place of a blocked player's
 //! name. The rows stay, so places and ranks don't change; the pages show "blocked player" without
 //! a link. A puzzle of theirs loses its title too.
@@ -21,12 +21,12 @@ use libsql::{Connection, params};
 use super::db::db_err;
 use super::now_ms;
 use crate::model::{
-    AllTimeEntry, ApiError, BLOCKED_NAME, Banzuke, BanzukeRow, BlockedPlayer, GroupMember,
-    GroupPage, GroupPuzzles, GroupRaces, GroupToday, GroupWeek, HallOfFame, HankoReceived,
-    InvitePreview, Kudos, Lane, Leaderboard, LeaderboardEntry, MonthBoard, MonthEntry, PuzzlePage,
-    PuzzleSummary, RaceEntrant, RacePlayer, RaceShare, RaceSummary, RaceView, ReplayData, RivalDay,
-    RivalRow, RivalsBoard, RivalsToday, SharedBy, SharedEntry, SharedPuzzlePage, TodayEntry,
-    WeekRow,
+    AllTimeEntry, ApiError, BLOCKED_NAME, Banzuke, BanzukeRow, BlockedPlayer, GroupAllTime,
+    GroupAllTimeRow, GroupMember, GroupPage, GroupPuzzles, GroupRaces, GroupToday, GroupWeek,
+    HallOfFame, HankoReceived, InvitePreview, Kudos, Lane, Leaderboard, LeaderboardEntry,
+    MonthBoard, MonthEntry, PuzzlePage, PuzzleSummary, RaceEntrant, RacePlayer, RaceShare,
+    RaceSummary, RaceView, ReplayData, RivalDay, RivalRow, RivalsBoard, RivalsToday, SharedBy,
+    SharedEntry, SharedPuzzlePage, TodayEntry, WeekRow,
 };
 
 /// `user` blocks `player` (`on`) or unblocks them, and returns the players blocked then.
@@ -233,6 +233,7 @@ named!(
     TodayEntry,
     WeekRow,
     BanzukeRow,
+    GroupAllTimeRow,
     Lane,
     RacePlayer,
     RaceEntrant,
@@ -305,6 +306,12 @@ impl Hide for GroupWeek {
 }
 
 impl Hide for Banzuke {
+    fn hide(&mut self, blocked: &Blocked) {
+        self.rows.hide(blocked);
+    }
+}
+
+impl Hide for GroupAllTime {
     fn hide(&mut self, blocked: &Blocked) {
         self.rows.hide(blocked);
     }

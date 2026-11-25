@@ -67,7 +67,9 @@
     "play": "Mainkan teka-teki hari ini",
     "done": "selesai",
     "waiting": "menunggu",
-    "unranked": "tanpa peringkat"
+    "unranked": "tanpa peringkat",
+    "empty": "Begitu anggota menyelesaikan teka-teki harian hari ini, peringkatnya muncul di sini, yang tercepat di atas.",
+    "alone": "Hari ini kamu selesai paling dulu. Yang lain akan muncul di sini menurut waktu begitu selesai."
   },
   "week": {
     "title": "Pekan",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: selesai",
     "missed": "{{ name }} · {{ date }}: terlewat",
     "open": "{{ name }} · {{ date }}: belum dimainkan"
+  },
+  "all_time": {
+    "title": "Sepanjang masa",
+    "since": "Dihitung sejak {{ date }}",
+    "empty": "Kemenangan terkumpul di sini seiring kalian bermain: teka-teki harian yang dimenangkan melawan setidaknya satu anggota lain, balapan yang dimenangkan, sepekan sebagai yokozuna.",
+    "member": "Anggota",
+    "daily": "Menang harian",
+    "daily_short": "Hari",
+    "races": "Menang balapan",
+    "races_short": "Balap",
+    "yokozuna": "Pekan yokozuna",
+    "yokozuna_short": "Yoko.",
+    "streak": "Beruntun",
+    "streak_short": "Runtun",
+    "streak_tip": "Rentetan teka-teki harian saat ini",
+    "rules": {
+      "title": "Cara menghitungnya",
+      "daily": "Menang harian: teka-teki harian berperingkat tercepat di grup pada hari yang dimainkan setidaknya dua anggota. Jika waktunya sama, semuanya menang.",
+      "races": "Menang balapan: penyelesaian tercepat dalam balapan yang diikuti setidaknya dua anggota, tanpa menyerah. Jika waktunya sama, semuanya menang.",
+      "yokozuna": "Pekan yokozuna: pekan yang sudah selesai saat anggota itu memuncaki banzuke, dengan setidaknya dua anggota di dalamnya.",
+      "members": "Dihitung untuk anggota saat ini sejak pekan pertama grup, teka-teki hari ini setelah kamu menyelesaikan punyamu. Ketuk judul kolom untuk mengurutkan."
+    }
   },
   "members": {
     "title": "Anggota",

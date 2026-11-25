@@ -67,7 +67,9 @@
     "play": "Play today's daily",
     "done": "done",
     "waiting": "waiting",
-    "unranked": "not ranked"
+    "unranked": "not ranked",
+    "empty": "Once members finish today's daily, the ranking shows up here, fastest first.",
+    "alone": "You're the first to finish today. The others are ranked here by time as they finish."
   },
   "week": {
     "title": "Week",
@@ -77,6 +79,28 @@
     "solved": "{{ name }} · {{ date }}: solved",
     "missed": "{{ name }} · {{ date }}: missed",
     "open": "{{ name }} · {{ date }}: still to play"
+  },
+  "all_time": {
+    "title": "All time",
+    "since": "Counted since {{ date }}",
+    "empty": "Wins add up here as you play: a daily won against at least one other member, a race won, a week as yokozuna.",
+    "member": "Member",
+    "daily": "Daily wins",
+    "daily_short": "Days",
+    "races": "Race wins",
+    "races_short": "Races",
+    "yokozuna": "Yokozuna weeks",
+    "yokozuna_short": "Yoko.",
+    "streak": "Streak",
+    "streak_short": "Streak",
+    "streak_tip": "Current daily streak",
+    "rules": {
+      "title": "How it's counted",
+      "daily": "A daily win: the group's fastest ranked daily on a day at least two members played it. Equal times all win.",
+      "races": "A race win: the fastest solve of a race at least two members joined, without giving up. Equal times all win.",
+      "yokozuna": "Yokozuna weeks: the weeks over in which the member topped the banzuke, with at least two members on it.",
+      "members": "Counted for the current members from the group's first week on, today's dailies once you've finished yours. Tap a column heading to sort by it."
+    }
   },
   "members": {
     "title": "Members",
