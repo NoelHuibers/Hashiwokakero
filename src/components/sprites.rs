@@ -232,23 +232,25 @@ pub fn BoardDefs() -> impl IntoView {
                 <rect y="2" width="16" height="1" class="px-wood-dark" />
                 <rect x="6" width="1" height="2" class="px-wood-light" />
             </pattern>
-            // Deck of the vermilion double bridge
-            <pattern id="deck-h" width="4" height="16" patternUnits="userSpaceOnUse">
-                <rect width="3" height="16" class="px-wood" />
-                <rect x="3" width="1" height="16" class="px-wood-dark" />
-                <rect y="5" width="3" height="1" class="px-wood-light" />
+            // Deck of the vermilion double bridge: planks as long as the single bridge's (3px
+            // pitch), it only differs in width
+            <pattern id="deck-h" width="3" height="16" patternUnits="userSpaceOnUse">
+                <rect width="2" height="16" class="px-wood" />
+                <rect x="2" width="1" height="16" class="px-wood-dark" />
+                <rect y="5" width="2" height="1" class="px-wood-light" />
             </pattern>
-            <pattern id="deck-v" width="16" height="4" patternUnits="userSpaceOnUse">
-                <rect width="16" height="3" class="px-wood" />
-                <rect y="3" width="16" height="1" class="px-wood-dark" />
-                <rect x="5" width="1" height="3" class="px-wood-light" />
+            <pattern id="deck-v" width="16" height="3" patternUnits="userSpaceOnUse">
+                <rect width="16" height="2" class="px-wood" />
+                <rect y="2" width="16" height="1" class="px-wood-dark" />
+                <rect x="5" width="1" height="2" class="px-wood-light" />
             </pattern>
-            // Railing posts above the top rail / left of the left rail
-            <pattern id="posts-h" width="4" height="16" patternUnits="userSpaceOnUse">
-                <rect x="1" y="2" width="1" height="1" class="px-shu" />
+            // Railing posts above the top rail / left of the left rail, over every second joint
+            // of the deck
+            <pattern id="posts-h" width="6" height="16" patternUnits="userSpaceOnUse">
+                <rect x="2" y="2" width="1" height="1" class="px-shu" />
             </pattern>
-            <pattern id="posts-v" width="16" height="4" patternUnits="userSpaceOnUse">
-                <rect x="2" y="1" width="1" height="1" class="px-shu" />
+            <pattern id="posts-v" width="16" height="6" patternUnits="userSpaceOnUse">
+                <rect x="2" y="2" width="1" height="1" class="px-shu" />
             </pattern>
         </defs>
     }
