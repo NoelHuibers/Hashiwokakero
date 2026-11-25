@@ -106,14 +106,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: false
       - name: Install cargo-leptos
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y cargo-leptos@0.3.11
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y cargo-leptos@0.3.11
       - name: Build
         run: cargo leptos build --release --cargo-locked --server-only
       - name: Package
@@ -144,14 +144,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - id: playwright
         run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - run: rustup toolchain install
+      - run: .github/scripts/retry.sh rustup toolchain install
       - uses: Swatinem/rust-cache@v2
         with:
           save-if: false
       - name: Install cargo-leptos
         run: |
-          curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-          cargo binstall -y cargo-leptos@0.3.11
+          .github/scripts/retry.sh bash -o pipefail -c "curl --retry 3 --retry-all-errors --retry-delay 5 -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash"
+          .github/scripts/retry.sh cargo binstall -y cargo-leptos@0.3.11
+      # wasm-bindgen and wasm-opt on the PATH, from the cache of CI's "Build site (browser)" or
+      # downloaded with retries (.github/scripts/wasm-tools.sh)
+      - id: wasm-tools
+        run: .github/scripts/wasm-tools.sh cargo-leptos key
+      - uses: actions/cache/restore@v6
+        with:
+          path: ~/.cache/wasm-tools
+          key: ${{ steps.wasm-tools.outputs.key }}
+      - name: wasm-bindgen and wasm-opt
+        run: .github/scripts/wasm-tools.sh cargo-leptos install
       - name: Build
         run: cargo leptos build --release --cargo-locked --frontend-only
       - name: Package

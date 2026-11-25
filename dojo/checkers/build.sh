@@ -24,7 +24,7 @@ CAKE_LPR=a36874a8b750b43fe4b385b8ddbf5b033e46a3fa
 
 # fetch REPO COMMIT FILE SHA256
 fetch() {
-  curl -fsSL --retry 3 -o "$work/$3" "https://raw.githubusercontent.com/$1/$2/$3"
+  curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 -o "$work/$3" "https://raw.githubusercontent.com/$1/$2/$3"
   echo "$4  $work/$3" | sha256sum -c - >/dev/null || {
     echo "checksum mismatch for $1/$3" >&2
     exit 1

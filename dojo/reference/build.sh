@@ -62,7 +62,7 @@ trap 'rm -rf "$work"' EXIT
 # fetch URL FILE SHA256: downloads into the cache once, checks it every time
 fetch() {
   if [ ! -f "$cache/$2" ]; then
-    curl -fsSL --retry 3 -o "$cache/$2.part" "$1"
+    curl -fsSL --retry 3 --retry-all-errors --retry-delay 5 -o "$cache/$2.part" "$1"
     mv "$cache/$2.part" "$cache/$2"
   fi
   echo "$3  $cache/$2" | sha256sum -c - >/dev/null || {
