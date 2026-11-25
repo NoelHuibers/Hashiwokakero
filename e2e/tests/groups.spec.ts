@@ -158,7 +158,7 @@ test('the seeded group: islands, bridges, a closed board and the week', async ({
       .locator(`tbody td[data-column="${id}"]`)
       .allInnerTexts()
       .then((v) => v.map(Number));
-  const descending = (v: number[]) => v.every((n, i) => i === 0 || v[i - 1] >= n);
+  const descending = (v: number[]) => v.every((n, i) => i === 0 || (v[i - 1] ?? n) >= n);
   await expect(column('daily')).toHaveAttribute('aria-sort', 'descending');
   expect(descending(await values('daily'))).toBe(true);
   // A heading sorts by its column, the most first, again for the fewest first
