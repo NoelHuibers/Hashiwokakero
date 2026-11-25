@@ -32,7 +32,7 @@ pub(crate) use browser::store_raw;
 pub use browser::{device_id, download, format_time, load, random_seed, store};
 pub use editor::Editor;
 pub use errors::{note_error, recent_errors};
-pub use game::{DailyGame, Game, Snapshot, Source, Status};
+pub use game::{DailyGame, Game, Snapshot, Source, Status, step_bridge};
 pub use hanko::HankoInbox;
 pub use move_log::MoveLog;
 pub use rivals::Rivals;

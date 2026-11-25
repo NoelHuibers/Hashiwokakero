@@ -24,6 +24,11 @@ test('build and remove bridges with the keyboard and hear island degrees', async
   await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(1);
   await board(page).press('-');
   await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(0);
+  // Nothing to take away: no wrap around to two, and no move
+  await board(page).press('Backspace');
+  await board(page).press('Enter');
+  await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[0]).toBe(1);
+  expect((await saved(page, PLAY_KEY)).moves).toBe(5);
   await board(page).press('ArrowRight');
   await board(page).press('Space');
   await expect.poll(async () => (await saved(page, PLAY_KEY)).bridges[1]).toBe(1);
